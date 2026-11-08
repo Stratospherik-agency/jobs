@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OpportunityStatus;
 use App\Models\Opportunity;
+use App\Support\Catalog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -33,6 +34,25 @@ class RegistryImporter
         'relance prévue' => 'follow_up_at',
         'retour' => 'feedback',
         'notes' => 'notes',
+        'secteur' => 'sector',
+        "taille d'entreprise" => 'company_size',
+        'niveau' => 'seniority',
+        'métier' => 'job_family',
+        'contrat' => 'contract_type',
+        'télétravail' => 'remote',
+        'langue' => 'language',
+        'salaire min' => 'salary_min',
+        'salaire max' => 'salary_max',
+        'adresse' => 'company_address',
+    ];
+
+    /** Colonnes à liste fermée : libellé du registre → clé. */
+    private const CHOICES = [
+        'company_size' => Catalog::COMPANY_SIZES,
+        'seniority' => Catalog::SENIORITY,
+        'contract_type' => Catalog::CONTRACTS,
+        'remote' => Catalog::REMOTE,
+        'language' => Catalog::LANGUAGES,
     ];
 
     private const DATES = ['added_at', 'published_at', 'applied_at', 'follow_up_at'];
@@ -181,6 +201,19 @@ class RegistryImporter
         foreach (self::DATES as $attribute) {
             if (filled($data[$attribute] ?? null)) {
                 $data[$attribute] = $this->parseDate($data[$attribute]);
+            }
+        }
+
+        foreach (self::CHOICES as $attribute => $options) {
+            if (filled($data[$attribute] ?? null)) {
+                $data[$attribute] = Catalog::keyFor($options, $data[$attribute]); // valeur inconnue ignorée
+            }
+        }
+
+        foreach (['salary_min', 'salary_max'] as $attribute) {
+            if (filled($data[$attribute] ?? null)) {
+                $digits = preg_replace('/\D/', '', $data[$attribute]);
+                $data[$attribute] = $digits === '' ? null : (int) $digits;
             }
         }
 

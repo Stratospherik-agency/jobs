@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Opportunities\Schemas;
 
 use App\Enums\OpportunityStatus;
+use App\Models\Opportunity;
+use App\Support\Catalog;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -40,6 +42,27 @@ class OpportunityForm
                             ->columnSpanFull(),
                         Textarea::make('notes')->label('Notes')->rows(4)->columnSpanFull(),
                     ]),
+                Section::make('Caractéristiques')
+                    ->description('Servent aux statistiques. Remplies à l\'ajout de l\'offre, modifiables ici.')
+                    ->columnSpan(2)
+                    ->columns(3)
+                    ->collapsible()
+                    ->schema([
+                        TextInput::make('sector')->label('Secteur')->datalist(Catalog::SECTORS)->maxLength(100),
+                        Select::make('company_size')->label('Taille d\'entreprise')->options(Catalog::COMPANY_SIZES)->native(false),
+                        TextInput::make('job_family')->label('Métier')->datalist(Catalog::JOB_FAMILIES)->maxLength(100),
+                        Select::make('seniority')->label('Niveau de poste')->options(Catalog::SENIORITY)->native(false),
+                        Select::make('contract_type')->label('Contrat')->options(Catalog::CONTRACTS)->native(false),
+                        Select::make('remote')->label('Télétravail')->options(Catalog::REMOTE)->native(false),
+                        TextInput::make('rate_min')->label('Taux min. (%)')->integer()->minValue(10)->maxValue(100)
+                            ->helperText('Déduit du champ « Taux / contrat ».'),
+                        TextInput::make('rate_max')->label('Taux max. (%)')->integer()->minValue(10)->maxValue(100),
+                        Select::make('language')->label('Langue de l\'annonce')->options(Catalog::LANGUAGES)->native(false),
+                        TextInput::make('salary_min')->label('Salaire min. (CHF/an)')->integer()->minValue(0),
+                        TextInput::make('salary_max')->label('Salaire max. (CHF/an)')->integer()->minValue(0),
+                        TextInput::make('company_address')->label('Adresse de l\'entreprise')
+                            ->helperText('Pour le justificatif ORP.')->maxLength(255),
+                    ]),
                 Section::make('Suivi')
                     ->columnSpan(1)
                     ->schema([
@@ -64,6 +87,12 @@ class OpportunityForm
                             ->native(false)
                             ->displayFormat('d.m.Y'),
                         Textarea::make('feedback')->label('Retour de l\'entreprise')->rows(3),
+                        DatePicker::make('followed_up_at')->label('Relancé le')->native(false)->displayFormat('d.m.Y'),
+                        DatePicker::make('first_response_at')->label('Première réponse le')->native(false)->displayFormat('d.m.Y'),
+                        Select::make('response_type')->label('Type de réponse')->options(Catalog::RESPONSE_TYPES)->native(false),
+                        Select::make('refusal_reason')->label('Motif de refus')->options(Catalog::REFUSAL_REASONS)->native(false)
+                            ->visible(fn ($get) => $get('response_type') === 'refus')->live(),
+                        DatePicker::make('interview_at')->label('Premier entretien le')->native(false)->displayFormat('d.m.Y'),
                     ]),
             ]);
     }
@@ -73,8 +102,8 @@ class OpportunityForm
      */
     public static function sources(): array
     {
-        $defaults = ['Indeed', 'LinkedIn', 'jobup', 'jobs.ch', 'Site de l\'entreprise', 'Réseau', 'Candidature spontanée'];
-        $used = \App\Models\Opportunity::query()->whereNotNull('source')->distinct()->pluck('source')->all();
+        $defaults = array_values(Catalog::SOURCES);
+        $used = Opportunity::query()->whereNotNull('source')->distinct()->pluck('source')->all();
         $all = array_values(array_unique(array_merge($defaults, $used)));
 
         return array_combine($all, $all);

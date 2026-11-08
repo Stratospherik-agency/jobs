@@ -60,7 +60,7 @@ class RegistrySyncTest extends TestCase
         $this->assertSame(2, $result['created']);
         $this->assertSame(OpportunityStatus::InPreparation, Opportunity::query()->where('company', 'Neural Concept')->first()->status);
         $this->assertNotNull(GoogleConnection::current()->registry_synced_at);
-        Http::assertSent(fn ($request) => str_contains($request->url(), 'Offres%21A1%3AN1000'));
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'Offres%21A1%3AZ1000'));
     }
 
     public function test_only_registry_changes_are_applied(): void
