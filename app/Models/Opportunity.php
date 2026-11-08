@@ -36,6 +36,7 @@ class Opportunity extends Model
             'follow_up_at' => 'date',
             'added_at' => 'date',
             'relevance' => 'integer',
+            'registry_snapshot' => 'array',
         ];
     }
 

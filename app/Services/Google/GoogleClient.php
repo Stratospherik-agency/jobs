@@ -90,9 +90,9 @@ class GoogleClient
         }
 
         $granted = explode(' ', (string) ($tokens['scope'] ?? ''));
-        foreach (['https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/drive.file'] as $scope) {
+        foreach (['https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/drive.file', Sheets::SCOPE] as $scope) {
             if (! in_array($scope, $granted, true)) {
-                throw new GoogleException('Toutes les autorisations n\'ont pas été accordées (Gmail et Drive). Recommence en cochant toutes les cases.');
+                throw new GoogleException('Toutes les autorisations n\'ont pas été accordées (Gmail, Drive et Sheets). Recommence en cochant toutes les cases.');
             }
         }
 

@@ -20,9 +20,12 @@ Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
   ou importer un brouillon Gmail. L'envoi part de Gmail uniquement après le bouton « Valider et envoyer »
   et la case de relecture cochée ; un dossier ne peut jamais partir deux fois. L'offre passe alors en
   « Candidature envoyée » et les documents sont archivés dans Drive (dossier « Candidatures »).
+- **Synchronisation du registre** : le registre Google Sheets est relu automatiquement (à l'ouverture et
+  toutes les 15 minutes). Les nouvelles offres sont ajoutées ; pour une offre existante, seuls les champs
+  modifiés dans le registre depuis la synchronisation précédente sont reportés, sans écraser le suivi fait ici.
 - **Correspondance** : les échanges Gmail avec le domaine de l'entreprise s'affichent sur la fiche.
 - **Compte Google** : connexion OAuth limitée à Gmail et aux fichiers Drive créés par l'application,
-  réservée au compte du propriétaire ; jetons chiffrés en base. Mise en place : [docs/google-cloud.md](docs/google-cloud.md).
+  réservée au compte du propriétaire, avec lecture seule de Google Sheets ; jetons chiffrés en base. Mise en place : [docs/google-cloud.md](docs/google-cloud.md).
 
 ## Sécurité en place
 

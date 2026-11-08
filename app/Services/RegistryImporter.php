@@ -68,6 +68,27 @@ class RegistryImporter
     }
 
     /**
+     * Synchronise le tableau de bord avec les valeurs lues dans le registre Google Sheets.
+     *
+     * Les nouvelles offres sont créées. Pour une offre déjà présente, seuls les champs modifiés
+     * dans le registre depuis la synchronisation précédente sont reportés : ce qui a été changé
+     * dans le tableau de bord n'est donc pas écrasé tant que le registre ne change pas ce champ.
+     *
+     * @param  list<list<string|null>>  $values  première ligne = en-têtes
+     * @return array{created: int, updated: int, skipped: int, errors: list<string>}
+     */
+    public function sync(array $values): array
+    {
+        $header = array_shift($values);
+
+        if (! $header) {
+            throw new RuntimeException('Le registre est vide.');
+        }
+
+        return $this->importRows($this->mapHeader($header), $values, sync: true);
+    }
+
+    /**
      * @param  array<int, string>  $header
      * @return array<int, string> index de colonne → attribut
      */
@@ -92,13 +113,13 @@ class RegistryImporter
     /**
      * @param  array<int, string>  $map
      * @param  list<array<int, string|null>>  $rows
-     * @return array{created: int, skipped: int, errors: list<string>}
+     * @return array{created: int, updated: int, skipped: int, errors: list<string>}
      */
-    private function importRows(array $map, array $rows): array
+    private function importRows(array $map, array $rows, bool $sync = false): array
     {
-        $result = ['created' => 0, 'skipped' => 0, 'errors' => []];
+        $result = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => []];
 
-        DB::transaction(function () use ($map, $rows, &$result) {
+        DB::transaction(function () use ($map, $rows, $sync, &$result) {
             foreach ($rows as $number => $row) {
                 $line = $number + 2; // ligne 1 = en-têtes
                 $data = [];
@@ -126,16 +147,22 @@ class RegistryImporter
                     continue;
                 }
 
-                if ($this->exists($data)) {
-                    $result['skipped']++;
+                if ($existing = $this->find($data)) {
+                    if ($sync && $this->applyChanges($existing, $data)) {
+                        $result['updated']++;
+                    } else {
+                        $result['skipped']++;
+                    }
 
                     continue;
                 }
 
-                $opportunity = Opportunity::query()->create($data);
+                $opportunity = new Opportunity($data);
+                $opportunity->registry_snapshot = $this->snapshot($data);
+                $opportunity->save();
                 $opportunity->events()->create([
                     'type' => 'import',
-                    'body' => 'Importée depuis le registre Google Sheets',
+                    'body' => $sync ? 'Ajoutée par synchronisation du registre Google Sheets' : 'Importée depuis le registre Google Sheets',
                     'happened_at' => now(),
                 ]);
                 $result['created']++;
@@ -194,15 +221,60 @@ class RegistryImporter
     /**
      * @param  array<string, mixed>  $data
      */
-    private function exists(array $data): bool
+    private function find(array $data): ?Opportunity
     {
-        if (filled($data['url'] ?? null) && Opportunity::query()->where('url', $data['url'])->exists()) {
-            return true;
+        if (filled($data['url'] ?? null) && $found = Opportunity::query()->where('url', $data['url'])->first()) {
+            return $found;
         }
 
         return Opportunity::query()
             ->whereRaw('lower(company) = ?', [mb_strtolower($data['company'])])
             ->whereRaw('lower(title) = ?', [mb_strtolower($data['title'])])
-            ->exists();
+            ->first();
+    }
+
+    /**
+     * Reporte sur l'offre les champs modifiés dans le registre.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function applyChanges(Opportunity $opportunity, array $data): bool
+    {
+        $snapshot = $this->snapshot($data);
+        $previous = $opportunity->registry_snapshot;
+
+        foreach ($snapshot as $attribute => $value) {
+            if ($previous !== null) {
+                // Seulement ce qui a changé dans le registre depuis la dernière synchronisation.
+                $changed = ($previous[$attribute] ?? null) !== $value;
+            } elseif ($attribute === 'status') {
+                // Première synchronisation d'une offre importée à la main : on ne revient jamais
+                // sur un suivi déjà avancé dans le tableau de bord.
+                $changed = in_array($opportunity->status, [OpportunityStatus::ToEvaluate, OpportunityStatus::ToApply], true);
+            } else {
+                $changed = blank($opportunity->getAttribute($attribute));
+            }
+
+            if ($changed) {
+                $opportunity->setAttribute($attribute, $data[$attribute]);
+            }
+        }
+
+        $opportunity->registry_snapshot = $snapshot;
+        $updated = collect($opportunity->getDirty())->except('registry_snapshot')->isNotEmpty();
+        $opportunity->save();
+
+        return $updated;
+    }
+
+    /**
+     * Valeurs du registre sous forme comparable (chaînes), mémorisées sur l'offre.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, string>
+     */
+    private function snapshot(array $data): array
+    {
+        return array_map(fn ($value) => $value instanceof OpportunityStatus ? $value->value : (string) $value, $data);
     }
 }

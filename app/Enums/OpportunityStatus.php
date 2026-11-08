@@ -12,6 +12,7 @@ enum OpportunityStatus: string implements HasColor, HasLabel
 {
     case ToEvaluate = 'a_evaluer';
     case ToApply = 'a_postuler';
+    case InPreparation = 'en_preparation';
     case Applied = 'envoyee';
     case FollowedUp = 'relance';
     case Interview = 'entretien';
@@ -24,6 +25,7 @@ enum OpportunityStatus: string implements HasColor, HasLabel
         return match ($this) {
             self::ToEvaluate => 'À évaluer',
             self::ToApply => 'À postuler',
+            self::InPreparation => 'En préparation',
             self::Applied => 'Candidature envoyée',
             self::FollowedUp => 'Relancé',
             self::Interview => 'Entretien',
@@ -37,7 +39,7 @@ enum OpportunityStatus: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::ToEvaluate => 'gray',
-            self::ToApply => 'info',
+            self::ToApply, self::InPreparation => 'info',
             self::Applied, self::FollowedUp => 'warning',
             self::Interview, self::OfferReceived => 'success',
             self::Rejected, self::Discarded => 'danger',

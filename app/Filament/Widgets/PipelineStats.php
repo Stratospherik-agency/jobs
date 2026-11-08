@@ -28,10 +28,10 @@ class PipelineStats extends StatsOverviewWidget
             Stat::make('À évaluer', $count(OpportunityStatus::ToEvaluate))
                 ->description('Offres repérées à trier')
                 ->url($link(OpportunityStatus::ToEvaluate)),
-            Stat::make('À postuler', $count(OpportunityStatus::ToApply))
-                ->description('Candidatures à préparer')
+            Stat::make('À postuler', $count(OpportunityStatus::ToApply, OpportunityStatus::InPreparation))
+                ->description('Candidatures à préparer ou en préparation')
                 ->color('info')
-                ->url($link(OpportunityStatus::ToApply)),
+                ->url($link(OpportunityStatus::ToApply, OpportunityStatus::InPreparation)),
             Stat::make('En attente de réponse', $count(OpportunityStatus::Applied, OpportunityStatus::FollowedUp))
                 ->description($due > 0 ? "{$due} relance(s) à faire" : 'Aucune relance en retard')
                 ->descriptionColor($due > 0 ? 'danger' : 'gray')

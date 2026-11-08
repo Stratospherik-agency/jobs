@@ -14,3 +14,6 @@ Schedule::call(function () {
         }
     }
 })->daily()->name('nettoyage-televersements');
+
+// Registre Google Sheets → tableau de bord.
+Schedule::command('registre:synchroniser')->everyFifteenMinutes()->withoutOverlapping();

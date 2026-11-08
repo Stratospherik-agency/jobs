@@ -21,7 +21,7 @@ class ToApply extends TableWidget
     {
         return $table
             ->query(fn () => Opportunity::query()
-                ->whereIn('status', [OpportunityStatus::ToEvaluate->value, OpportunityStatus::ToApply->value])
+                ->whereIn('status', [OpportunityStatus::ToEvaluate->value, OpportunityStatus::ToApply->value, OpportunityStatus::InPreparation->value])
                 ->orderByDesc('relevance')
                 ->orderByDesc('added_at'))
             ->emptyStateHeading('Aucune offre en attente')
