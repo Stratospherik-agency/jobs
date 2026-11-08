@@ -28,11 +28,16 @@ class RecordAuthenticationEvents
         ]);
 
         if (config('dashboard.login_alerts') && $event->user instanceof User) {
-            $event->user->notify(new NewLoginAlert(
-                ip: (string) $request->ip(),
-                userAgent: (string) $request->userAgent(),
-                at: now(),
-            ));
+            // Un problème d'envoi (SMTP mal configuré, serveur indisponible) ne doit pas bloquer la connexion.
+            try {
+                $event->user->notify(new NewLoginAlert(
+                    ip: (string) $request->ip(),
+                    userAgent: (string) $request->userAgent(),
+                    at: now(),
+                ));
+            } catch (\Throwable $e) {
+                Log::channel('security')->error('Alerte de connexion non envoyée', ['erreur' => $e->getMessage()]);
+            }
         }
     }
 

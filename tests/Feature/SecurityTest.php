@@ -99,4 +99,14 @@ class SecurityTest extends TestCase
 
         Notification::assertSentToTimes($owner, NewLoginAlert::class, 1);
     }
+
+    public function test_a_mail_failure_does_not_block_login(): void
+    {
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 1]);
+        $owner = User::factory()->create(['email' => 'owner@example.test']);
+
+        event(new Login('web', $owner, false));
+
+        $this->assertTrue(true);
+    }
 }
