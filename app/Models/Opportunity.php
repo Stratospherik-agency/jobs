@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OpportunityStatus;
+use App\Support\Catalog;
 use Database\Factories\OpportunityFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,9 @@ class Opportunity extends Model
     protected $fillable = [
         'company', 'title', 'location', 'rate', 'source', 'url', 'published_at', 'relevance',
         'status', 'applied_at', 'follow_up_at', 'feedback', 'notes', 'added_at',
+        'sector', 'company_size', 'company_address', 'seniority', 'job_family', 'contract_type',
+        'rate_min', 'rate_max', 'remote', 'language', 'salary_min', 'salary_max',
+        'followed_up_at', 'first_response_at', 'response_type', 'refusal_reason', 'interview_at',
     ];
 
     protected $attributes = [
@@ -40,6 +44,13 @@ class Opportunity extends Model
             'added_at' => 'date',
             'relevance' => 'integer',
             'registry_snapshot' => 'array',
+            'followed_up_at' => 'date',
+            'first_response_at' => 'date',
+            'interview_at' => 'date',
+            'rate_min' => 'integer',
+            'rate_max' => 'integer',
+            'salary_min' => 'integer',
+            'salary_max' => 'integer',
         ];
     }
 
@@ -59,6 +70,31 @@ class Opportunity extends Model
             // Une fois relancé, la prochaine relance est repoussée.
             if ($opportunity->isDirty('status') && $opportunity->status === OpportunityStatus::FollowedUp) {
                 $opportunity->follow_up_at = today()->addDays(self::followUpDays());
+            }
+
+            // Taux et contrat déduits du champ libre « Taux / contrat ».
+            if ($opportunity->isDirty('rate')) {
+                [$opportunity->rate_min, $opportunity->rate_max] = Catalog::parseRate($opportunity->rate);
+                $opportunity->contract_type ??= Catalog::contractFromText($opportunity->rate);
+            }
+
+            // Dates clés du déroulé, pour les statistiques.
+            if ($opportunity->isDirty('status')) {
+                match ($opportunity->status) {
+                    OpportunityStatus::FollowedUp => $opportunity->followed_up_at ??= today(),
+                    OpportunityStatus::Interview, OpportunityStatus::OfferReceived => (function () use ($opportunity) {
+                        $opportunity->interview_at ??= today();
+                        $opportunity->first_response_at ??= today();
+                        $opportunity->response_type ??= 'positive';
+                    })(),
+                    OpportunityStatus::Rejected => (function () use ($opportunity) {
+                        if ($opportunity->applied_at) {
+                            $opportunity->first_response_at ??= today();
+                            $opportunity->response_type ??= 'refus';
+                        }
+                    })(),
+                    default => null,
+                };
             }
 
             // Dossier clos : plus de relance.

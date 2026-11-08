@@ -3,16 +3,16 @@
 namespace App\Providers\Filament;
 
 use App\Filament\InitialsAvatarProvider;
+use App\Filament\Pages\Dashboard;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\GoogleCallbackController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrpReportController;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use App\Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -22,6 +22,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
@@ -59,6 +60,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
             ->pages([
                 Dashboard::class,
             ])
@@ -79,6 +81,8 @@ class AdminPanelProvider extends PanelProvider
             ->authenticatedRoutes(function () {
                 Route::get('google/callback', GoogleCallbackController::class)->name('google.callback');
                 Route::get('pieces-jointes/{attachment}', AttachmentController::class)->name('attachments.download');
+                Route::get('statistiques/orp/{month}/csv', [OrpReportController::class, 'csv'])->where('month', '\d{4}-\d{2}')->name('orp.csv');
+                Route::get('statistiques/orp/{month}/imprimer', [OrpReportController::class, 'print'])->where('month', '\d{4}-\d{2}')->name('orp.print');
             })
             ->authMiddleware([
                 Authenticate::class,

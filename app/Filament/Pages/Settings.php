@@ -103,7 +103,7 @@ class Settings extends Page
                                             ->maxLength(500),
                                         TextInput::make('google_registry_range')
                                             ->label('Onglet et colonnes lus')
-                                            ->placeholder('Offres!A1:N1000')
+                                            ->placeholder('Offres!A1:Z1000')
                                             ->maxLength(100),
                                         TextInput::make('google_drive_folder')
                                             ->label('Dossier Drive des candidatures envoyées')
