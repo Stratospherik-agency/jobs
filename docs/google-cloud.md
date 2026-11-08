@@ -31,12 +31,21 @@ Le tableau de bord demande trois autorisations seulement :
 2. Nom de l'application : `Tableau de bord candidatures` ; adresse d'assistance : votre Gmail.
 3. Audience : **Externe**.
 4. Coordonnées : votre Gmail. Accepter les conditions puis **Créer**.
-5. Menu **Audience** : cliquer sur **Publier l'application**, puis confirmer.
-   Sans cette étape, Google coupe l'accès tous les 7 jours.
+5. Menu **Audience** (https://console.cloud.google.com/auth/audience) :
+   - **Utilisateurs test** → **Add users** → `pierreolliviertissier@gmail.com` → **Enregistrer** ;
+   - puis, en haut de la même page, **Publier l'application** → **Confirmer**. L'état doit passer
+     à « En production ». Sans cette publication, Google coupe l'accès tous les 7 jours.
 
-Google affichera « application non validée » lors de la connexion : c'est normal pour une
-application personnelle. Cliquer sur **Paramètres avancés**, puis **Accéder à Tableau de bord
-candidatures**.
+À la connexion (étape 6), Google affiche « Google n'a pas validé cette application » : c'est normal
+pour une application personnelle. Cliquer sur **Paramètres avancés** (ou **Continuer**), puis
+**Accéder à Tableau de bord candidatures**.
+
+### Message « Accès bloqué : … n'a pas terminé la procédure de validation de Google »
+
+Ce message (erreur 403 `access_denied`) apparaît quand l'application est encore « En test » et que
+le compte Google utilisé n'est pas dans la liste des utilisateurs test. Refaire l'étape 5 ci-dessus
+(ajouter `pierreolliviertissier@gmail.com` comme utilisateur test, puis publier l'application),
+attendre une minute, puis cliquer à nouveau sur **Connecter mon compte Google**.
 
 ## 4. Créer les identifiants
 
