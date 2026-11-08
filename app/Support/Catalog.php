@@ -83,7 +83,7 @@ final class Catalog
         'sans_reponse' => 'Sans réponse',
     ];
 
-    /** Pierre ne veut pas démarcher d'agences web. */
+    /** Agences web : Pierre ne les vise que pour un poste de gestion de projets (signalées, pas bloquées). */
     public static function isWebAgency(?string ...$texts): bool
     {
         $text = mb_strtolower(implode(' ', array_filter($texts)));

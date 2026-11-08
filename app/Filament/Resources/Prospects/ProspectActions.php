@@ -24,7 +24,7 @@ class ProspectActions
             ->label('Retenir')
             ->icon('heroicon-o-check')
             ->color('success')
-            ->visible(fn (Prospect $record) => in_array($record->status, [ProspectStatus::ToQualify, ProspectStatus::Discarded, ProspectStatus::Recontact], true) && ! $record->isWebAgency())
+            ->visible(fn (Prospect $record) => in_array($record->status, [ProspectStatus::ToQualify, ProspectStatus::Discarded, ProspectStatus::Recontact], true))
             ->action(function (Prospect $record) {
                 $record->update(['status' => ProspectStatus::Selected]);
                 Notification::make()->title($record->company.' retenue')->success()->send();

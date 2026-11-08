@@ -18,7 +18,13 @@ class ViewProspect extends ViewRecord
 
     public function getSubheading(): ?string
     {
-        return collect([$this->getRecord()->sector, $this->getRecord()->locality])->filter()->implode(' · ') ?: null;
+        $line = collect([$this->getRecord()->sector, $this->getRecord()->locality])->filter()->implode(' · ');
+
+        if ($this->getRecord()->isWebAgency()) {
+            $line .= ($line ? ' · ' : '').'Agence : à retenir seulement pour un poste de gestion de projets';
+        }
+
+        return $line ?: null;
     }
 
     protected function getHeaderActions(): array

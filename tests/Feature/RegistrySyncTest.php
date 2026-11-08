@@ -155,7 +155,7 @@ class RegistrySyncTest extends TestCase
 
     private const PROSPECT_HEADER = ["Date d'ajout", 'Entreprise', 'Famille', 'Secteur', 'Localité', 'Site web', 'Employés', 'Signal', 'Date du signal', 'Source du signal', 'Raisons', "Pistes d'apport", 'Contact', 'Fonction', 'E-mail', 'LinkedIn', 'Canal', 'Note (1-3)', 'Langue', 'Statut', "Date d'envoi", 'Relance prévue', 'Date de réponse', 'Type de réponse', 'Recontact', 'Documents', 'Notes'];
 
-    public function test_spontaneous_tab_creates_targets_and_skips_web_agencies(): void
+    public function test_spontaneous_tab_creates_targets(): void
     {
         $this->connect();
         $this->prospectSheet = [
@@ -167,13 +167,13 @@ class RegistrySyncTest extends TestCase
 
         $result = app(RegistrySync::class)->sync();
 
-        $this->assertSame(1, $result['prospects']['created']);
-        $this->assertStringContainsString('agence web exclue', $result['prospects']['errors'][0]);
+        $this->assertSame(2, $result['prospects']['created']);
+        $this->assertTrue(Prospect::query()->firstWhere('company', 'Pixel Studio')->isWebAgency());
         $bobst = Prospect::query()->firstWhere('company', 'Bobst');
         $this->assertSame('grande', $bobst->family);
         $this->assertSame('portail', $bobst->channel);
         $this->assertSame('https://bobst.com', $bobst->website);
-        $this->assertStringContainsString('Candidatures spontanées : 1 ajoutée(s)', GoogleConnection::current()->registry_sync_summary);
+        $this->assertStringContainsString('Candidatures spontanées : 2 ajoutée(s)', GoogleConnection::current()->registry_sync_summary);
     }
 
     public function test_missing_spontaneous_tab_is_not_an_error(): void

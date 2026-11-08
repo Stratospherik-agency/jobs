@@ -4,13 +4,11 @@ namespace App\Filament\Resources\Prospects\Schemas;
 
 use App\Enums\ProspectStatus;
 use App\Support\Catalog;
-use Closure;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class ProspectForm
@@ -27,12 +25,7 @@ class ProspectForm
                         TextInput::make('company')
                             ->label('Entreprise')
                             ->required()
-                            ->maxLength(255)
-                            ->rule(fn (Get $get) => function (string $attribute, $value, Closure $fail) use ($get) {
-                                if (Catalog::isWebAgency($value, $get('sector'))) {
-                                    $fail('Les agences web sont exclues des candidatures spontanées.');
-                                }
-                            }),
+                            ->maxLength(255),
                         Select::make('family')->label('Famille')->options(Catalog::PROSPECT_FAMILIES),
                         Select::make('sector')->label('Secteur')->options(array_combine(Catalog::SECTORS, Catalog::SECTORS))->searchable(),
                         TextInput::make('locality')->label('Localité'),

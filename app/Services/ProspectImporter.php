@@ -93,12 +93,6 @@ class ProspectImporter
                     continue;
                 }
 
-                if (Catalog::isWebAgency($data['company'], $data['sector'] ?? null)) {
-                    $result['errors'][] = "Spontanées, ligne {$line} : agence web exclue.";
-
-                    continue;
-                }
-
                 try {
                     $data = $this->normalize($data);
                 } catch (RuntimeException $e) {

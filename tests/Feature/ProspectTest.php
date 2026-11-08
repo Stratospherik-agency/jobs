@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Enums\OpportunityStatus;
 use App\Enums\ProspectStatus;
-use App\Filament\Resources\Prospects\Pages\CreateProspect;
 use App\Filament\Resources\Prospects\Pages\ViewProspect;
 use App\Filament\Resources\Prospects\ProspectActions;
 use App\Models\Prospect;
@@ -103,17 +102,13 @@ class ProspectTest extends TestCase
         $this->assertSame(ProspectStatus::Interview, $prospect->fresh()->status);
     }
 
-    public function test_web_agencies_are_refused(): void
+    public function test_web_agencies_are_flagged_not_blocked(): void
     {
+        $agency = Prospect::factory()->create(['company' => 'Studio X', 'sector' => 'Agence digitale']);
         $this->actingAs($this->owner());
 
-        Livewire::test(CreateProspect::class)
-            ->fillForm(['company' => 'Pixel, agence web', 'status' => ProspectStatus::ToQualify->value])
-            ->call('create')
-            ->assertHasFormErrors(['company']);
-
-        $agency = Prospect::factory()->create(['company' => 'Studio X', 'sector' => 'Agence digitale']);
-        $this->assertFalse(ProspectActions::select()->record($agency)->isVisible());
+        $this->get('/candidatures-spontanees')->assertOk()->assertSee('seulement pour un poste de gestion de projets');
+        $this->assertTrue(ProspectActions::select()->record($agency)->isVisible());
     }
 
     public function test_statistics_against_targets(): void

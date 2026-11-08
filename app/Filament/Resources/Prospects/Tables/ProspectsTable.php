@@ -31,7 +31,8 @@ class ProspectsTable
                     ->searchable()
                     ->sortable()
                     ->weight('bold')
-                    ->description(fn (Prospect $record) => collect([$record->sector, $record->locality])->filter()->implode(' · ')),
+                    ->description(fn (Prospect $record) => collect([$record->sector, $record->locality])->filter()->implode(' · ')
+                        .($record->isWebAgency() ? ' · Agence : seulement pour un poste de gestion de projets' : '')),
                 TextColumn::make('reasons')
                     ->label('Pourquoi la viser')
                     ->limit(110)
@@ -82,7 +83,7 @@ class ProspectsTable
                     BulkAction::make('select_many')
                         ->label('Retenir')
                         ->icon('heroicon-o-check')
-                        ->action(fn (Collection $records) => $records->reject->isWebAgency()->each->update(['status' => ProspectStatus::Selected]))
+                        ->action(fn (Collection $records) => $records->each->update(['status' => ProspectStatus::Selected]))
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('discard_many')
                         ->label('Écarter')
