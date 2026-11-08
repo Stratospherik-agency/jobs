@@ -63,6 +63,19 @@ class OpportunityForm
                         TextInput::make('company_address')->label('Adresse de l\'entreprise')
                             ->helperText('Pour le justificatif ORP.')->maxLength(255),
                     ]),
+                Section::make('ATS')
+                    ->description('Système de tri des candidatures. Sert à voir s\'il pénalise tes envois.')
+                    ->columnSpan(2)
+                    ->columns(3)
+                    ->collapsible()
+                    ->schema([
+                        Select::make('ats')->label('Passe par un ATS')->options(Catalog::ATS)->native(false),
+                        TextInput::make('ats_system')->label('Système ATS')->datalist(Catalog::ATS_SYSTEMS)->maxLength(100)
+                            ->helperText('Deviné depuis le lien de l\'annonce quand c\'est possible.'),
+                        TextInput::make('ats_score')->label('Score ATS (%)')->integer()->minValue(0)->maxValue(100)
+                            ->helperText('Part des mots-clés de l\'annonce présents dans le CV envoyé.'),
+                        Textarea::make('ats_missing_keywords')->label('Mots-clés manquants')->rows(2)->columnSpanFull(),
+                    ]),
                 Section::make('Suivi')
                     ->columnSpan(1)
                     ->schema([

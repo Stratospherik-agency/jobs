@@ -22,7 +22,7 @@ class Explorer extends StatisticsPage
 
     protected static ?string $slug = 'explorateur';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 7;
 
     /** Nombre maximal de petits graphiques. */
     private const FACETS = 6;

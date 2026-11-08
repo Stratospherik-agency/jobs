@@ -94,4 +94,29 @@ class StatisticsTest extends TestCase
         $this->get('/statistiques/orp/2026-10/csv')->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
         $this->get('/statistiques/orp/2026-10/imprimer')->assertOk()->assertSee('Responsable digital');
     }
+
+    public function test_ats_system_is_guessed_from_the_offer_link(): void
+    {
+        $o = Opportunity::factory()->create(['url' => 'https://nestle.wd3.myworkdayjobs.com/fr-FR/External/job/123']);
+
+        $this->assertSame('Workday', $o->ats_system);
+        $this->assertSame('oui', $o->ats);
+        $this->assertNull(Catalog::atsFromUrl('https://to.indeed.com/abc'));
+    }
+
+    public function test_response_rate_by_ats_score_band(): void
+    {
+        Opportunity::factory()->create(['status' => OpportunityStatus::Interview, 'applied_at' => today()->subDays(4), 'ats' => 'oui', 'ats_score' => 85]);
+        Opportunity::factory()->create(['status' => OpportunityStatus::Applied, 'applied_at' => today()->subDays(4), 'ats' => 'oui', 'ats_score' => 55]);
+        Opportunity::factory()->create(['status' => OpportunityStatus::Rejected, 'applied_at' => today()->subDays(4), 'ats' => 'non']);
+
+        $data = Statistics::dataset(['period' => '30']);
+        $table = Statistics::crosstab($data, 'response_rate', 'ats_score');
+
+        $this->assertSame(['Moins de 60 %', '80 % et plus'], $table['labels']);
+        $this->assertSame(70.0, Statistics::measure('ats_score', $data)['value']);
+
+        $this->actingAs($this->owner());
+        $this->get('/statistiques/ats')->assertOk();
+    }
 }

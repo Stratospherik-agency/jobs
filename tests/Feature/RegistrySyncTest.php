@@ -48,7 +48,7 @@ class RegistrySyncTest extends TestCase
             Http::fake(['sheets.googleapis.com/*' => function ($request) {
                 if (str_contains(rawurldecode($request->url()), 'Spontanées')) {
                     return $this->prospectSheet === null
-                        ? Http::response(['error' => ['message' => 'Unable to parse range: Spontanées!A1:AA1000']], 400)
+                        ? Http::response(['error' => ['message' => 'Unable to parse range: Spontanées!A1:AE1000']], 400)
                         : Http::response(['values' => $this->prospectSheet]);
                 }
 
@@ -185,5 +185,22 @@ class RegistrySyncTest extends TestCase
 
         $this->assertNull($result['prospects']);
         $this->assertNull(GoogleConnection::current()->registry_sync_error);
+    }
+
+    public function test_ats_columns_are_read_from_the_registry(): void
+    {
+        $this->connect();
+        $this->sheet = [];
+        $header = [...self::HEADER, 'ATS', 'Outil ATS', 'Score ATS', 'Mots-clés manquants'];
+        $this->fakeSheet();
+        $this->sheet = [$header, [...$this->row(), 'Oui', 'Indeed (Indeed Apply)', '67', 'CAD, simulation']];
+
+        app(RegistrySync::class)->sync();
+
+        $o = Opportunity::query()->firstWhere('company', 'Neural Concept');
+        $this->assertSame('oui', $o->ats);
+        $this->assertSame('Indeed (Indeed Apply)', $o->ats_system);
+        $this->assertSame(67, $o->ats_score);
+        $this->assertSame('CAD, simulation', $o->ats_missing_keywords);
     }
 }

@@ -80,6 +80,10 @@ class ProspectActions
                 default => null,
             },
             'language' => $prospect->language,
+            'ats' => $prospect->ats,
+            'ats_system' => $prospect->ats_system,
+            'ats_score' => $prospect->ats_score,
+            'ats_missing_keywords' => $prospect->ats_missing_keywords,
             'notes' => collect([
                 $prospect->reasons ? "Pourquoi cette entreprise :\n".$prospect->reasons : null,
                 $prospect->contributions ? "Pistes d'apport :\n".$prospect->contributions : null,

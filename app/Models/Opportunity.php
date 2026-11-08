@@ -28,6 +28,7 @@ class Opportunity extends Model
         'sector', 'company_size', 'company_address', 'seniority', 'job_family', 'contract_type',
         'rate_min', 'rate_max', 'remote', 'language', 'salary_min', 'salary_max',
         'followed_up_at', 'first_response_at', 'response_type', 'refusal_reason', 'interview_at',
+        'ats', 'ats_system', 'ats_score', 'ats_missing_keywords',
     ];
 
     protected $attributes = [
@@ -51,6 +52,7 @@ class Opportunity extends Model
             'rate_max' => 'integer',
             'salary_min' => 'integer',
             'salary_max' => 'integer',
+            'ats_score' => 'integer',
         ];
     }
 
@@ -70,6 +72,12 @@ class Opportunity extends Model
             // Une fois relancé, la prochaine relance est repoussée.
             if ($opportunity->isDirty('status') && $opportunity->status === OpportunityStatus::FollowedUp) {
                 $opportunity->follow_up_at = today()->addDays(self::followUpDays());
+            }
+
+            // Système ATS deviné depuis le lien de l'annonce (Workday, SuccessFactors…).
+            if (blank($opportunity->ats_system) && ($system = Catalog::atsFromUrl($opportunity->url))) {
+                $opportunity->ats_system = $system;
+                $opportunity->ats ??= 'oui';
             }
 
             // Taux et contrat déduits du champ libre « Taux / contrat ».

@@ -18,7 +18,7 @@ class ProspectChart extends ChartWidget
 
     protected static bool $isDiscovered = false;
 
-    /** weekly | funnel | family | channel */
+    /** weekly | funnel | family | channel | ats */
     public string $kind = 'weekly';
 
     public int|string|array $span = 1;
@@ -37,6 +37,7 @@ class ProspectChart extends ChartWidget
             'funnel' => 'Entonnoir des candidatures spontanées',
             'family' => 'Résultats par famille d\'entreprise',
             'channel' => 'Résultats par canal d\'envoi',
+            'ats' => 'Résultats selon le passage par un ATS',
         };
     }
 
@@ -107,7 +108,7 @@ class ProspectChart extends ChartWidget
 
     protected function getOptions(): RawJs
     {
-        $percent = in_array($this->kind, ['family', 'channel'], true) ? 'true' : 'false';
+        $percent = in_array($this->kind, ['family', 'channel', 'ats'], true) ? 'true' : 'false';
         $horizontal = $this->kind === 'funnel' ? "'y'" : "'x'";
         $legend = $this->kind === 'funnel' ? 'false' : 'true';
 

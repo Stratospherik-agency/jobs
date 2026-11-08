@@ -104,7 +104,11 @@ class ProspectStatistics
      */
     public static function byAttribute(Collection $data, string $attribute): array
     {
-        $options = $attribute === 'family' ? Catalog::PROSPECT_FAMILIES : Catalog::PROSPECT_CHANNELS;
+        $options = match ($attribute) {
+            'family' => Catalog::PROSPECT_FAMILIES,
+            'ats' => Catalog::ATS,
+            default => Catalog::PROSPECT_CHANNELS,
+        };
         $sent = self::sent($data);
         $result = ['labels' => [], 'response' => [], 'interview' => [], 'meta' => []];
 

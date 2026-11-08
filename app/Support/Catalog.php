@@ -91,6 +91,58 @@ final class Catalog
         return (bool) preg_match('/agence\s+(web|digitale|de\s+communication\s+digitale|de\s+marketing\s+digital|internet)|web\s*agency|digital\s+agency|agence\s+de\s+cr[ée]ation\s+de\s+sites/u', $text);
     }
 
+    public const ATS = [
+        'oui' => 'Oui',
+        'non' => 'Non',
+        'inconnu' => 'Inconnu',
+    ];
+
+    /** Systèmes de recrutement (ATS) courants en Suisse romande. */
+    public const ATS_SYSTEMS = [
+        'Workday', 'SuccessFactors', 'Abacus Umantis', 'Refline', 'Greenhouse', 'Lever', 'SmartRecruiters',
+        'Personio', 'Teamtailor', 'Recruitee', 'Softgarden', 'iCIMS', 'Taleo', 'Prospective', 'Indeed (Indeed Apply)',
+        'LinkedIn (Easy Apply)', 'E-mail direct',
+    ];
+
+    /** Domaine du lien de l'annonce → système ATS. */
+    private const ATS_DOMAINS = [
+        'myworkdayjobs.com' => 'Workday', 'workday.com' => 'Workday',
+        'successfactors' => 'SuccessFactors', 'sapsf.' => 'SuccessFactors',
+        'umantis.com' => 'Abacus Umantis', 'refline.ch' => 'Refline',
+        'greenhouse.io' => 'Greenhouse', 'lever.co' => 'Lever', 'smartrecruiters.com' => 'SmartRecruiters',
+        'personio.' => 'Personio', 'teamtailor.com' => 'Teamtailor', 'recruitee.com' => 'Recruitee',
+        'softgarden.io' => 'Softgarden', 'softgarden.de' => 'Softgarden', 'icims.com' => 'iCIMS',
+        'taleo.net' => 'Taleo', 'prospective.ch' => 'Prospective',
+    ];
+
+    public static function atsFromUrl(?string $url): ?string
+    {
+        $host = mb_strtolower((string) parse_url((string) $url, PHP_URL_HOST));
+
+        if ($host === '') {
+            return null;
+        }
+
+        foreach (self::ATS_DOMAINS as $needle => $system) {
+            if (str_contains($host, $needle)) {
+                return $system;
+            }
+        }
+
+        return null;
+    }
+
+    /** Tranches du score ATS retenues pour l'analyse. */
+    public static function atsScoreBand(?int $score): ?string
+    {
+        return match (true) {
+            $score === null => null,
+            $score < 60 => 'Moins de 60 %',
+            $score < 80 => '60 à 79 %',
+            default => '80 % et plus',
+        };
+    }
+
     public const SECTORS = [
         'Tech et logiciels', 'Industrie', 'Horlogerie et luxe', 'Banque et assurance', 'Santé et pharma',
         'Biotech et medtech', 'Commerce et distribution', 'Télécoms', 'Médias et communication',
