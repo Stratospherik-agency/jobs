@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_sqlite, zip
+          coverage: none
+      - name: Installer les dépendances
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Tests
+        run: php artisan test
+      - name: Failles connues dans les dépendances
+        run: composer audit
