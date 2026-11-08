@@ -3,13 +3,15 @@
 Ce guide se fait une seule fois, depuis un navigateur, connecté au compte Google
 `pierreolliviertissier@gmail.com`. Comptez 15 minutes.
 
-Le tableau de bord demande deux autorisations seulement :
+Le tableau de bord demande trois autorisations seulement :
 
 - **Gmail (modification)** : lire les brouillons et la correspondance, envoyer une candidature
   **uniquement après votre validation** dans le tableau de bord. Rien n'est jamais supprimé, à part
   le brouillon importé, une fois la candidature envoyée.
 - **Drive (fichiers créés par l'application)** : l'application ne voit que le dossier
   « Candidatures » qu'elle crée elle-même, pas le reste de votre Drive.
+- **Sheets (lecture seule)** : relire le registre des candidatures pour tenir le tableau de bord à jour.
+  L'application ne peut rien modifier dans vos feuilles.
 
 ## 1. Créer le projet
 
@@ -17,10 +19,11 @@ Le tableau de bord demande deux autorisations seulement :
 2. Nom du projet : `Candidatures`, puis **Créer**.
 3. En haut de la page, vérifier que le projet « Candidatures » est bien sélectionné.
 
-## 2. Activer les deux API
+## 2. Activer les trois API
 
 1. Ouvrir https://console.cloud.google.com/apis/library/gmail.googleapis.com puis **Activer**.
 2. Ouvrir https://console.cloud.google.com/apis/library/drive.googleapis.com puis **Activer**.
+3. Ouvrir https://console.cloud.google.com/apis/library/sheets.googleapis.com puis **Activer**.
 
 ## 3. Écran de consentement
 
@@ -65,6 +68,13 @@ normal) : coller chaque valeur puis Entrée.
 1. Ouvrir https://jobs.pierreolliviertissier.ch/compte-google
 2. **Connecter mon compte Google**, choisir `pierreolliviertissier@gmail.com`, accepter.
 3. La page affiche « Connecté ». Tout autre compte Google est refusé.
+
+Le registre Google Sheets est ensuite synchronisé automatiquement : à l'ouverture du tableau de bord
+(au plus toutes les 5 minutes) et toutes les 15 minutes si la tâche planifiée est en place
+(voir `deploiement-infomaniak.md`, section 6). Le bouton **Synchroniser maintenant** force une mise à jour.
+
+Si vous aviez connecté Google avant l'arrivée de la synchronisation, cliquez une fois sur
+**Reconnecter** pour accorder la lecture du registre.
 
 Pour couper l'accès à tout moment : bouton **Déconnecter** sur la même page, ou
 https://myaccount.google.com/connections.

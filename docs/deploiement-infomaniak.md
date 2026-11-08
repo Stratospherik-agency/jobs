@@ -84,7 +84,7 @@ Dans le Manager (Tâches planifiées / Cron) ou par `crontab -e`, toutes les min
 * * * * * cd ~/sites-production/pierreolliviertissier/jobs.pierreolliviertissier.ch && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Elles servent au nettoyage et serviront aux synchronisations des étapes suivantes.
+Elles synchronisent le registre Google Sheets toutes les 15 minutes et nettoient les fichiers abandonnés.
 
 ## 6 bis. Connexion Google
 

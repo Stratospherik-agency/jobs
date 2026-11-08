@@ -47,7 +47,12 @@ return [
             'https://www.googleapis.com/auth/gmail.modify',
             // Uniquement les fichiers et dossiers créés par le tableau de bord.
             'https://www.googleapis.com/auth/drive.file',
+            // Lecture seule du registre des candidatures (synchronisation automatique).
+            'https://www.googleapis.com/auth/spreadsheets.readonly',
         ],
+        // Registre Google Sheets synchronisé avec le tableau de bord.
+        'registry_spreadsheet_id' => env('GOOGLE_REGISTRY_SHEET_ID', '1hJl9PTZBWSL_U-Oo1oTvv9NdSqzbTNYMGmwcI5dW_Ac'),
+        'registry_range' => env('GOOGLE_REGISTRY_RANGE', 'Offres!A1:N1000'),
         'drive_root_folder' => env('GOOGLE_DRIVE_FOLDER', 'Candidatures'),
     ],
 

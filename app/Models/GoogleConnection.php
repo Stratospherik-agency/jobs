@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class GoogleConnection extends Model
 {
-    protected $fillable = ['email', 'access_token', 'refresh_token', 'expires_at', 'scopes', 'drive_root_folder_id'];
+    protected $fillable = ['email', 'access_token', 'refresh_token', 'expires_at', 'scopes', 'drive_root_folder_id',
+        'registry_synced_at', 'registry_sync_summary', 'registry_sync_error'];
 
     protected $hidden = ['access_token', 'refresh_token'];
 
@@ -19,7 +20,13 @@ class GoogleConnection extends Model
             'access_token' => 'encrypted',
             'refresh_token' => 'encrypted',
             'expires_at' => 'datetime',
+            'registry_synced_at' => 'datetime',
         ];
+    }
+
+    public function hasScope(string $scope): bool
+    {
+        return in_array($scope, explode(' ', (string) $this->scopes), true);
     }
 
     public static function current(): ?self

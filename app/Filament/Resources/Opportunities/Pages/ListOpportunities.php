@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Opportunities\Pages;
 
 use App\Filament\Resources\Opportunities\OpportunityResource;
+use App\Filament\Pages\GoogleAccount;
+use App\Services\Google\GoogleClient;
 use App\Services\RegistryImporter;
+use App\Services\RegistrySync;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
@@ -16,9 +19,22 @@ class ListOpportunities extends ListRecords
 {
     protected static string $resource = OpportunityResource::class;
 
+    public function mount(): void
+    {
+        app(RegistrySync::class)->syncIfStale();
+
+        parent::mount();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('sync_registry')
+                ->label('Synchroniser le registre')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->visible(fn () => GoogleClient::isConnected() && ! RegistrySync::unavailableReason())
+                ->action(fn (RegistrySync $sync) => GoogleAccount::notifySync($sync)),
             Action::make('import_registry')
                 ->label('Importer le registre')
                 ->icon('heroicon-o-arrow-up-tray')

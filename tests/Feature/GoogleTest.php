@@ -180,7 +180,7 @@ class GoogleTest extends TestCase
         Http::fake([
             'oauth2.googleapis.com/token' => Http::response([
                 'access_token' => 'a', 'refresh_token' => 'r', 'expires_in' => 3600,
-                'scope' => 'openid email https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/drive.file',
+                'scope' => 'openid email https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets.readonly',
             ]),
             'openidconnect.googleapis.com/*' => Http::response(['email' => 'Owner@example.test']),
         ]);
