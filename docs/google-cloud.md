@@ -48,20 +48,15 @@ candidatures**.
    Gardez cette fenêtre ouverte (ou téléchargez le JSON). Ne les envoyez à personne,
    pas même par e-mail ou dans une discussion.
 
-## 5. Les ajouter au serveur
+## 5. Les coller dans le tableau de bord
 
-Se connecter en SSH, puis :
+1. Ouvrir https://jobs.pierreolliviertissier.ch/reglages (menu **Réglages**, onglet **Google**).
+2. Coller l'**ID client** et le **Code secret du client** dans les champs du même nom.
+3. **Enregistrer**. Le code secret est chiffré dans la base et n'est plus jamais réaffiché ;
+   laisser le champ vide lors d'un prochain enregistrement le conserve.
 
-```bash
-cd ~/sites-production/pierreolliviertissier/jobs.pierreolliviertissier.ch
-read -r -p "ID client Google : " GID && read -r -s -p "Code secret Google : " GSECRET && echo \
- && sed -i '/^GOOGLE_CLIENT_ID=/d;/^GOOGLE_CLIENT_SECRET=/d' .env \
- && printf 'GOOGLE_CLIENT_ID=%s\nGOOGLE_CLIENT_SECRET=%s\n' "$GID" "$GSECRET" >> .env \
- && unset GID GSECRET && php artisan optimize && echo "Enregistré."
-```
-
-La commande demande l'ID puis le code secret (le code n'apparaît pas pendant la saisie, c'est
-normal) : coller chaque valeur puis Entrée.
+L'adresse à indiquer à l'étape 4 (« URI de redirection ») est affichée en haut de cet onglet,
+avec un bouton pour la copier.
 
 ## 6. Se connecter depuis le tableau de bord
 

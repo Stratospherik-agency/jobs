@@ -23,7 +23,7 @@ class FollowUpsDue extends TableWidget
         return $table
             ->query(fn () => Opportunity::query()->followUpDue()->orderBy('follow_up_at'))
             ->emptyStateHeading('Aucune relance à faire')
-            ->emptyStateDescription('Les candidatures sans réponse apparaîtront ici 10 jours après l\'envoi.')
+            ->emptyStateDescription('Les candidatures sans réponse apparaîtront ici '.\App\Models\Opportunity::followUpDays().' jours après l\'envoi.')
             ->emptyStateIcon('heroicon-o-check-circle')
             ->paginated([5, 10])
             ->recordUrl(fn (Opportunity $record) => OpportunityResource::getUrl('view', ['record' => $record]))

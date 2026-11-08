@@ -16,7 +16,10 @@ class Opportunity extends Model
     use HasFactory;
 
     /** Délai par défaut avant relance, en jours. */
-    public const FOLLOW_UP_DAYS = 10;
+    public static function followUpDays(): int
+    {
+        return max(1, (int) config('dashboard.follow_up_days', 10));
+    }
 
     protected $fillable = [
         'company', 'title', 'location', 'rate', 'source', 'url', 'published_at', 'relevance',
@@ -50,12 +53,12 @@ class Opportunity extends Model
             // Candidature envoyée : date d'envoi et relance prévue remplies automatiquement.
             if ($opportunity->status === OpportunityStatus::Applied) {
                 $opportunity->applied_at ??= today();
-                $opportunity->follow_up_at ??= $opportunity->applied_at->copy()->addDays(self::FOLLOW_UP_DAYS);
+                $opportunity->follow_up_at ??= $opportunity->applied_at->copy()->addDays(self::followUpDays());
             }
 
             // Une fois relancé, la prochaine relance est repoussée.
             if ($opportunity->isDirty('status') && $opportunity->status === OpportunityStatus::FollowedUp) {
-                $opportunity->follow_up_at = today()->addDays(self::FOLLOW_UP_DAYS);
+                $opportunity->follow_up_at = today()->addDays(self::followUpDays());
             }
 
             // Dossier clos : plus de relance.

@@ -47,7 +47,7 @@ class ApplicationActions
                 'to_email' => $record->application?->to_email,
                 'cc' => $record->application?->cc,
                 'subject' => $record->application?->subject ?? 'Candidature – '.$record->title,
-                'body' => $record->application?->body,
+                'body' => $record->application?->body ?? (filled(config('dashboard.signature')) ? "\n\n".config('dashboard.signature') : null),
                 'keep' => $record->application?->attachments->pluck('id')->map(fn ($id) => (string) $id)->all() ?? [],
             ])
             ->schema([
@@ -180,7 +180,7 @@ class ApplicationActions
 
                 Notification::make()
                     ->title('Candidature envoyée')
-                    ->body('Envoyée à '.$application->to_email.'. Relance prévue dans 10 jours.')
+                    ->body('Envoyée à '.$application->to_email.'. Relance prévue dans '.Opportunity::followUpDays().' jours.')
                     ->success()
                     ->persistent()
                     ->send();

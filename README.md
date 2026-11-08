@@ -23,6 +23,8 @@ Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
 - **Synchronisation du registre** : le registre Google Sheets est relu automatiquement (à l'ouverture et
   toutes les 15 minutes). Les nouvelles offres sont ajoutées ; pour une offre existante, seuls les champs
   modifiés dans le registre depuis la synchronisation précédente sont reportés, sans écraser le suivi fait ici.
+- **Réglages** : identifiants Google (code secret chiffré, jamais réaffiché), registre et dossier Drive,
+  délai de relance, signature des candidatures, alertes de connexion. Les réglages priment sur le `.env`.
 - **Correspondance** : les échanges Gmail avec le domaine de l'entreprise s'affichent sur la fiche.
 - **Compte Google** : connexion OAuth limitée à Gmail et aux fichiers Drive créés par l'application,
   réservée au compte du propriétaire, avec lecture seule de Google Sheets ; jetons chiffrés en base. Mise en place : [docs/google-cloud.md](docs/google-cloud.md).

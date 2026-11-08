@@ -38,7 +38,10 @@ class GoogleAccount extends Page
                 Section::make('Configuration requise')
                     ->icon('heroicon-o-exclamation-triangle')
                     ->schema([
-                        Text::make('Les identifiants Google (GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET) ne sont pas encore dans le fichier .env du serveur. Suis le guide docs/google-cloud.md, puis reviens ici.'),
+                        Text::make('Les identifiants Google ne sont pas encore renseignés. Crée-les dans Google Cloud (guide docs/google-cloud.md), puis colle l\'ID client et le code secret dans Réglages, onglet Google.'),
+                    ])
+                    ->footerActions([
+                        Action::make('open_settings')->label('Ouvrir les réglages Google')->url(Settings::getUrl().'?tab=google::data::tab'),
                     ]),
             ]);
         }
