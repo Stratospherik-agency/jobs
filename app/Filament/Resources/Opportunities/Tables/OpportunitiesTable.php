@@ -39,9 +39,10 @@ class OpportunitiesTable
                     ->color(fn (?int $state) => match ($state) { 3 => 'success', 2 => 'info', default => 'gray' })
                     ->sortable(),
                 TextColumn::make('status')->label('Statut')->badge()->sortable(),
+                TextColumn::make('application.status')->label('Dossier')->badge()->placeholder('—')->toggleable(),
                 TextColumn::make('source')->label('Source')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('published_at')->label('Publiée le')->date('d.m.Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('applied_at')->label('Candidature')->date('d.m.Y')->sortable()->placeholder('—'),
+                TextColumn::make('applied_at')->label('Envoyée le')->date('d.m.Y')->sortable()->placeholder('—'),
                 TextColumn::make('follow_up_at')
                     ->label('Relance')
                     ->date('d.m.Y')

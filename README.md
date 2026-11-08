@@ -16,6 +16,13 @@ Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
 - **Tableau de bord** : chiffres clés, relances à faire, meilleures pistes à traiter.
 - **Import du registre** : bouton « Importer le registre » (export CSV de Google Sheets), ou
   `php artisan registre:importer fichier.csv`. Les offres déjà présentes sont ignorées.
+- **Candidatures** : sur chaque offre, préparer le dossier (destinataire, objet, lettre, pièces jointes)
+  ou importer un brouillon Gmail. L'envoi part de Gmail uniquement après le bouton « Valider et envoyer »
+  et la case de relecture cochée ; un dossier ne peut jamais partir deux fois. L'offre passe alors en
+  « Candidature envoyée » et les documents sont archivés dans Drive (dossier « Candidatures »).
+- **Correspondance** : les échanges Gmail avec le domaine de l'entreprise s'affichent sur la fiche.
+- **Compte Google** : connexion OAuth limitée à Gmail et aux fichiers Drive créés par l'application,
+  réservée au compte du propriétaire ; jetons chiffrés en base. Mise en place : [docs/google-cloud.md](docs/google-cloud.md).
 
 ## Sécurité en place
 
@@ -30,6 +37,7 @@ Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
 | En-têtes | CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` |
 | Sessions | Chiffrées, cookie `Secure` + `HttpOnly`, expiration après 60 min et à la fermeture du navigateur |
 | Aucun service tiers | Polices système et avatars générés localement : aucune requête vers un autre domaine |
+| Google | OAuth avec PKCE et contrôle `state`, seul le compte du propriétaire est accepté, jetons chiffrés, pièces jointes stockées hors du dossier public et servies seulement après connexion |
 | Dépendances | `composer audit` à chaque pull request, Dependabot chaque semaine |
 
 Limite connue : Filament (Alpine.js, Livewire) exige `'unsafe-inline'` et `'unsafe-eval'` dans la CSP

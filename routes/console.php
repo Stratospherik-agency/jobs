@@ -1,8 +1,16 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Storage;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Fichiers téléversés mais jamais rattachés à une candidature (formulaire abandonné).
+Schedule::call(function () {
+    $disk = Storage::disk('local');
+    foreach (['candidatures/tmp', 'livewire-tmp'] as $directory) {
+        foreach ($disk->files($directory) as $file) {
+            if ($disk->lastModified($file) < now()->subDay()->getTimestamp()) {
+                $disk->delete($file);
+            }
+        }
+    }
+})->daily()->name('nettoyage-televersements');

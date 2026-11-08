@@ -3,6 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Filament\InitialsAvatarProvider;
+use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\GoogleCallbackController;
+use Illuminate\Support\Facades\Route;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -72,6 +75,11 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            // Routes réservées au propriétaire connecté (même protection que le panneau).
+            ->authenticatedRoutes(function () {
+                Route::get('google/callback', GoogleCallbackController::class)->name('google.callback');
+                Route::get('pieces-jointes/{attachment}', AttachmentController::class)->name('attachments.download');
+            })
             ->authMiddleware([
                 Authenticate::class,
             ]);

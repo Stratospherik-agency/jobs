@@ -84,7 +84,11 @@ Dans le Manager (Tâches planifiées / Cron) ou par `crontab -e`, toutes les min
 * * * * * cd ~/sites-production/pierreolliviertissier/jobs.pierreolliviertissier.ch && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Elles serviront aux synchronisations Gmail et Sheets des étapes suivantes.
+Elles servent au nettoyage et serviront aux synchronisations des étapes suivantes.
+
+## 6 bis. Connexion Google
+
+Voir [google-cloud.md](google-cloud.md).
 
 ## 7. Vérifications après mise en ligne
 

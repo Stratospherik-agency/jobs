@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Opportunities\Pages;
 
 use App\Enums\OpportunityStatus;
+use App\Filament\Resources\Opportunities\Actions\ApplicationActions;
+use App\Filament\Resources\Opportunities\Widgets\Correspondence;
 use App\Filament\Resources\Opportunities\OpportunityResource;
 use App\Models\Opportunity;
 use Filament\Actions\Action;
@@ -24,9 +26,24 @@ class ViewOpportunity extends ViewRecord
         return $this->getRecord()->company;
     }
 
+    protected function getFooterWidgets(): array
+    {
+        return [Correspondence::class];
+    }
+
     protected function getHeaderActions(): array
     {
         return [
+            ApplicationActions::validateAndSend(),
+            ActionGroup::make([
+                ApplicationActions::prepare(),
+                ApplicationActions::importDraft(),
+                ApplicationActions::discard(),
+            ])
+                ->label('Candidature')
+                ->icon('heroicon-o-envelope')
+                ->color('gray')
+                ->button(),
             Action::make('open_offer')
                 ->label('Voir l\'offre')
                 ->icon('heroicon-o-arrow-top-right-on-square')
