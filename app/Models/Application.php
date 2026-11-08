@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\ProspectStatus;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +32,17 @@ class Application extends Model
 
     protected static function booted(): void
     {
+        // Candidature spontanée prête : la cible passe « À valider ».
+        static::saved(function (Application $application) {
+            if ($application->wasChanged('status') || $application->wasRecentlyCreated) {
+                if ($application->status === ApplicationStatus::ToValidate) {
+                    Prospect::query()->where('opportunity_id', $application->opportunity_id)
+                        ->whereIn('status', [ProspectStatus::Selected->value, ProspectStatus::InPreparation->value])
+                        ->get()->each->update(['status' => ProspectStatus::ToValidate]);
+                }
+            }
+        });
+
         static::deleting(function (Application $application) {
             $application->attachments->each->delete();
         });
@@ -77,7 +90,7 @@ class Application extends Model
             ->all();
     }
 
-    public static function attachmentDisk(): \Illuminate\Contracts\Filesystem\Filesystem
+    public static function attachmentDisk(): Filesystem
     {
         return Storage::disk('local');
     }
