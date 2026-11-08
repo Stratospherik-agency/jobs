@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Settings;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Réglages saisis dans la page Réglages (prioritaires sur le .env).
+        Settings::apply();
+
         // En production, toutes les URL générées sont en HTTPS.
         if ($this->app->isProduction()) {
             URL::forceHttps();
