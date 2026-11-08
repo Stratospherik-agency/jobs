@@ -1,6 +1,6 @@
 # Tableau de bord des candidatures
 
-Application privée de Pierre-Ollivier Tissier, servie sur `candidatures.pierreolliviertissier.ch`.
+Application privée de Pierre-Ollivier Tissier, servie sur `jobs.pierreolliviertissier.ch`.
 Elle centralise les opportunités d'emploi, la correspondance, les candidatures et les documents adaptés
 à chaque poste. Aucune candidature n'est envoyée sans validation explicite dans l'interface.
 
