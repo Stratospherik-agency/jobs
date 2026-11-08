@@ -23,6 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use UnitEnum;
 
 /**
  * Réglages de la plateforme. Toutes les valeurs sont chiffrées en base ; le code secret
@@ -33,6 +34,8 @@ class Settings extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static ?string $navigationLabel = 'Réglages';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Compte';
 
     protected static ?string $title = 'Réglages';
 

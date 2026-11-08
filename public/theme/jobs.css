@@ -1,0 +1,611 @@
+/*
+ * Thème « jobs » du tableau de bord.
+ * Bleu dominant, surfaces en verre façon iOS, animations souples et réglages de lisibilité.
+ * Ce fichier est servi tel quel (aucune compilation) et se charge après le thème Filament.
+ */
+
+/* ---------- Polices hébergées sur le site (licence SIL OFL, voir fonts/) ---------- */
+@font-face {
+    font-family: 'Inter';
+    src: url('fonts/inter-variable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Atkinson Hyperlegible';
+    src: url('fonts/atkinson-hyperlegible-latin-400-normal.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Atkinson Hyperlegible';
+    src: url('fonts/atkinson-hyperlegible-latin-700-normal.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+}
+
+/* ---------- Jetons ---------- */
+html:root {
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui;
+
+    --jobs-ease: cubic-bezier(.32, .72, 0, 1);
+    --jobs-spring: cubic-bezier(.34, 1.3, .64, 1);
+    --jobs-radius: 1.25rem;
+    --jobs-blur: blur(24px) saturate(180%);
+
+    --jobs-bg: #EDF2F9;
+    --jobs-ink: #0B1B33;
+    --jobs-ink-2: #4A5B75;
+    --jobs-card: rgba(255, 255, 255, .70);
+    --jobs-chrome: rgba(255, 255, 255, .62);
+    --jobs-float: rgba(255, 255, 255, .95);
+    --jobs-solid: #FFFFFF;
+    --jobs-ring: rgba(11, 27, 51, .07);
+    --jobs-hair: rgba(11, 27, 51, .08);
+    --jobs-rim: rgba(255, 255, 255, .9);
+    --jobs-shadow: 0 1px 2px rgba(11, 27, 51, .05), 0 14px 36px rgba(11, 27, 51, .08);
+    --jobs-shadow-float: 0 2px 6px rgba(11, 27, 51, .08), 0 24px 60px rgba(11, 27, 51, .18);
+    --jobs-amb-1: rgba(46, 139, 255, .26);
+    --jobs-amb-2: rgba(10, 91, 216, .14);
+    --jobs-blue: var(--primary-600);
+    --jobs-blue-soft: color-mix(in oklab, var(--primary-600) 11%, transparent);
+    --jobs-on-blue: #FFFFFF;
+    --jobs-logo: #0A5BD8;
+    --jobs-logo-accent: #2E8BFF;
+}
+
+html:root.dark {
+    --jobs-bg: #060C18;
+    --jobs-ink: #EAF1FF;
+    --jobs-ink-2: #A3B4CE;
+    --jobs-card: rgba(24, 36, 60, .55);
+    --jobs-chrome: rgba(16, 26, 46, .62);
+    --jobs-float: rgba(22, 33, 56, .96);
+    --jobs-solid: #121D33;
+    --jobs-ring: rgba(255, 255, 255, .08);
+    --jobs-hair: rgba(255, 255, 255, .09);
+    --jobs-rim: rgba(255, 255, 255, .07);
+    --jobs-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 40px rgba(0, 0, 0, .32);
+    --jobs-shadow-float: 0 2px 6px rgba(0, 0, 0, .4), 0 28px 70px rgba(0, 0, 0, .55);
+    --jobs-amb-1: rgba(46, 139, 255, .20);
+    --jobs-amb-2: rgba(90, 70, 255, .10);
+    --jobs-blue: var(--primary-400);
+    --jobs-blue-soft: color-mix(in oklab, var(--primary-400) 16%, transparent);
+    --jobs-on-blue: #06101F;
+    --jobs-logo: #5AA4FF;
+    --jobs-logo-accent: #A9D4FF;
+}
+
+/* ---------- Taille du texte (tout Filament est en rem, donc tout suit) ---------- */
+html[data-texte='90'] { font-size: 90%; }
+html[data-texte='115'] { font-size: 115%; }
+html[data-texte='130'] { font-size: 130%; }
+
+/* ---------- Fond : brume bleue et deux halos de lumière ---------- */
+:root .fi-body {
+    background-color: var(--jobs-bg);
+    color: var(--jobs-ink);
+    font-family: var(--font-family), ui-sans-serif, system-ui, sans-serif;
+    transition: background-color .35s ease, color .35s ease;
+}
+:root .fi-body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(46rem 46rem at 92% -12%, var(--jobs-amb-1), transparent 70%),
+        radial-gradient(40rem 40rem at 8% 112%, var(--jobs-amb-2), transparent 70%);
+}
+
+/* ---------- Typographie : approche optique d'Apple ---------- */
+:root .fi-header-heading {
+    letter-spacing: -.025em;
+    font-weight: 700;
+}
+:root .fi-section-header-heading,
+:root .fi-ta-header-heading {
+    letter-spacing: -.01em;
+}
+
+/* ---------- Logo ---------- */
+.jobs-brand {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .2rem;
+    height: 100%;
+    color: var(--jobs-ink);
+}
+.jobs-brand-mark {
+    height: 62%;
+    width: auto;
+    overflow: visible;
+}
+.jobs-brand-name {
+    font-size: .66rem;
+    font-weight: 500;
+    letter-spacing: .01em;
+    line-height: 1;
+    color: var(--jobs-ink-2);
+    white-space: nowrap;
+}
+.jobs-brand-dot { color: var(--jobs-blue); }
+.fi-simple-header .fi-logo { margin-inline: auto; }
+.fi-simple-header .jobs-brand { align-items: center; }
+.fi-simple-header .jobs-brand-name { font-size: .95rem; }
+
+/* ---------- Verre : barres de navigation (le contenu défile dessous) ---------- */
+:root .fi-topbar {
+    background-color: var(--jobs-chrome);
+    -webkit-backdrop-filter: var(--jobs-blur);
+    backdrop-filter: var(--jobs-blur);
+    box-shadow: inset 0 -1px 0 var(--jobs-hair);
+}
+:root .fi-body-has-topbar .fi-sidebar-header,
+:root .fi-sidebar-header {
+    background-color: transparent;
+    box-shadow: none;
+}
+@media (min-width: 64rem) {
+    :root .fi-sidebar {
+        background-color: var(--jobs-chrome);
+        -webkit-backdrop-filter: var(--jobs-blur);
+        backdrop-filter: var(--jobs-blur);
+        box-shadow: inset -1px 0 0 var(--jobs-hair);
+    }
+}
+@media (max-width: 63.99rem) {
+    :root .fi-sidebar {
+        background-color: var(--jobs-float);
+        -webkit-backdrop-filter: var(--jobs-blur);
+        backdrop-filter: var(--jobs-blur);
+    }
+}
+
+/* ---------- Verre : cartes de contenu ---------- */
+:root .fi-section:not(.fi-section-not-contained),
+:root .fi-ta-ctn,
+:root .fi-wi-stats-overview-stat,
+:root .fi-simple-main,
+:root .fi-in-entry-wrp .fi-section:not(.fi-section-not-contained) {
+    background-color: var(--jobs-card);
+    border-radius: var(--jobs-radius);
+    box-shadow: var(--jobs-shadow), inset 0 1px 0 var(--jobs-rim), 0 0 0 1px var(--jobs-ring);
+}
+:root .fi-simple-main {
+    -webkit-backdrop-filter: var(--jobs-blur);
+    backdrop-filter: var(--jobs-blur);
+}
+:root .fi-wi-stats-overview-stat {
+    transition: transform .4s var(--jobs-ease), box-shadow .4s ease;
+}
+:root .fi-wi-stats-overview-stat:hover {
+    transform: translateY(-2px);
+}
+:root .fi-wi-stats-overview-stat-value {
+    letter-spacing: -.03em;
+}
+
+/* Champs de saisie : fond plein pour rester lisibles sur le verre */
+:root .fi-input-wrp {
+    background-color: var(--jobs-solid);
+    border-radius: .75rem;
+}
+
+/* ---------- Verre flottant : menus, fenêtres ---------- */
+:root .fi-dropdown-panel {
+    background-color: var(--jobs-float);
+    -webkit-backdrop-filter: var(--jobs-blur);
+    backdrop-filter: var(--jobs-blur);
+    border-radius: 1rem;
+    box-shadow: var(--jobs-shadow-float), 0 0 0 1px var(--jobs-ring);
+}
+:root .fi-modal-window {
+    background-color: var(--jobs-float);
+    -webkit-backdrop-filter: var(--jobs-blur);
+    backdrop-filter: var(--jobs-blur);
+    box-shadow: var(--jobs-shadow-float), 0 0 0 1px var(--jobs-ring);
+}
+:root .fi-modal:not(.fi-modal-slide-over) .fi-modal-window {
+    border-radius: 1.5rem;
+}
+
+/* ---------- Navigation latérale ---------- */
+:root .fi-sidebar-group-label {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--jobs-ink-2);
+}
+:root .fi-sidebar-item-btn {
+    border-radius: .8rem;
+    transition: background-color .2s ease, color .2s ease, transform .18s var(--jobs-ease);
+}
+:root .fi-sidebar-item-btn:hover {
+    background-color: var(--jobs-blue-soft);
+}
+:root .fi-sidebar-item-btn:active {
+    transform: scale(.97);
+}
+:root .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    background-color: var(--jobs-blue);
+    box-shadow: 0 6px 16px color-mix(in oklab, var(--jobs-blue) 30%, transparent);
+}
+:root .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
+:root .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    color: var(--jobs-on-blue);
+}
+:root .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-badge {
+    background-color: color-mix(in oklab, var(--jobs-on-blue) 22%, transparent);
+    color: var(--jobs-on-blue);
+    --tw-ring-color: transparent;
+}
+
+/* Onglets (sous-pages des statistiques, filtres) façon contrôle segmenté */
+:root .fi-tabs {
+    border-radius: 1rem;
+    background-color: var(--jobs-card);
+    box-shadow: inset 0 1px 0 var(--jobs-rim), 0 0 0 1px var(--jobs-ring);
+}
+:root .fi-tabs-item {
+    border-radius: .75rem;
+    transition: background-color .25s var(--jobs-ease), color .2s ease;
+}
+:root .fi-tabs-item.fi-active {
+    background-color: var(--jobs-solid);
+    box-shadow: 0 2px 8px rgba(11, 27, 51, .12);
+}
+
+/* ---------- Boutons : retour immédiat à l'appui ---------- */
+:root .fi-btn {
+    border-radius: 999px;
+    transition: transform .18s var(--jobs-ease), background-color .2s ease, box-shadow .2s ease;
+}
+:root .fi-btn:active,
+:root .fi-icon-btn:active {
+    transform: scale(.97);
+}
+:root .fi-btn.fi-color:not(.fi-outlined):not(.fi-link) {
+    box-shadow: 0 6px 16px color-mix(in oklab, var(--color-600, var(--primary-600)) 26%, transparent);
+}
+
+/* Tableaux : survol doux */
+:root .fi-ta-row {
+    transition: background-color .2s ease;
+}
+
+/* ---------- Animations d'entrée (ressort amorti, sans rebond) ---------- */
+@keyframes jobs-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes jobs-materialize {
+    from { opacity: 0; transform: scale(.94) translateY(-4px); filter: blur(6px); }
+    to { opacity: 1; transform: none; filter: none; }
+}
+:root .fi-page > * {
+    animation: jobs-rise .6s var(--jobs-ease) both;
+}
+:root .fi-page > *:nth-child(2) { animation-delay: .05s; }
+:root .fi-page > *:nth-child(3) { animation-delay: .1s; }
+:root .fi-dropdown-panel {
+    transform-origin: top right;
+}
+.jobs-materialize-enter { transition: opacity .38s var(--jobs-ease), transform .38s var(--jobs-ease), filter .38s var(--jobs-ease); }
+.jobs-materialize-leave { transition: opacity .2s ease, transform .2s ease, filter .2s ease; }
+.jobs-materialize-from { opacity: 0; transform: scale(.92) translateY(-6px); filter: blur(6px); }
+.jobs-materialize-to { opacity: 1; transform: none; filter: none; }
+
+/* ---------- Bouton et panneau « Lisibilité » ---------- */
+.jobs-lisibilite {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-inline-start: .5rem;
+}
+.jobs-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    color: var(--jobs-ink);
+    background-color: var(--jobs-float);
+    box-shadow: 0 0 0 1px var(--jobs-ring);
+    cursor: pointer;
+    transition: transform .18s var(--jobs-ease), background-color .2s ease, color .2s ease;
+}
+.jobs-icon-btn:hover { background-color: var(--jobs-blue-soft); }
+.jobs-icon-btn:active { transform: scale(.94); }
+.jobs-icon-btn.jobs-on { background-color: var(--jobs-blue); color: var(--jobs-on-blue); }
+
+.jobs-panneau {
+    position: absolute;
+    top: calc(100% + .75rem);
+    right: 0;
+    z-index: 40;
+    width: 22rem;
+    max-width: calc(100vw - 1.5rem);
+    max-height: calc(100dvh - 6rem);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 1.1rem 1.2rem;
+    border-radius: 1.5rem;
+    color: var(--jobs-ink);
+    background-color: var(--jobs-float);
+    -webkit-backdrop-filter: var(--jobs-blur);
+    backdrop-filter: var(--jobs-blur);
+    box-shadow: var(--jobs-shadow-float), inset 0 1px 0 var(--jobs-rim), 0 0 0 1px var(--jobs-ring);
+    transform-origin: top right;
+}
+@media (max-width: 40rem) {
+    .jobs-panneau {
+        position: fixed;
+        top: calc(var(--topbar-height, 4rem) + .5rem);
+        left: .75rem;
+        right: .75rem;
+        width: auto;
+    }
+}
+.jobs-panneau-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: .75rem;
+}
+.jobs-panneau-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+}
+.jobs-link-btn {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--jobs-blue);
+    cursor: pointer;
+    padding: .25rem .4rem;
+    border-radius: .5rem;
+}
+.jobs-link-btn:hover { background-color: var(--jobs-blue-soft); }
+.jobs-panneau-label {
+    margin: 0 0 .35rem;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--jobs-ink-2);
+}
+.jobs-seg {
+    display: flex;
+    gap: .2rem;
+    padding: .2rem;
+    margin-bottom: .9rem;
+    border-radius: .8rem;
+    background-color: var(--jobs-hair);
+}
+.jobs-seg button {
+    flex: 1;
+    min-height: 2.4rem;
+    padding: .4rem .5rem;
+    border-radius: .65rem;
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--jobs-ink-2);
+    cursor: pointer;
+    transition: background-color .25s var(--jobs-ease), color .2s ease, box-shadow .25s ease;
+}
+.jobs-seg button.jobs-on {
+    background-color: var(--jobs-solid);
+    color: var(--jobs-ink);
+    box-shadow: 0 2px 8px rgba(11, 27, 51, .12);
+}
+.jobs-toggles { display: flex; flex-direction: column; }
+.jobs-toggle {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    width: 100%;
+    min-height: 2.9rem;
+    padding: .5rem .2rem;
+    text-align: start;
+    cursor: pointer;
+    border-radius: .6rem;
+}
+.jobs-toggle-text { flex: 1; display: flex; flex-direction: column; line-height: 1.3; }
+.jobs-toggle-label { font-size: .9rem; font-weight: 600; }
+.jobs-toggle-hint { font-size: .76rem; color: var(--jobs-ink-2); }
+.jobs-switch {
+    flex: none;
+    position: relative;
+    width: 2.6rem;
+    height: 1.55rem;
+    border-radius: 999px;
+    background-color: var(--jobs-hair);
+    box-shadow: inset 0 0 0 1px var(--jobs-ring);
+    transition: background-color .3s ease;
+}
+.jobs-switch i {
+    position: absolute;
+    top: .15rem;
+    left: .15rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+    transition: transform .4s var(--jobs-spring);
+}
+.jobs-toggle.jobs-on .jobs-switch { background-color: var(--jobs-blue); }
+.jobs-toggle.jobs-on .jobs-switch i { transform: translateX(1.05rem); }
+.jobs-panneau-note {
+    margin: .7rem 0 0;
+    font-size: .74rem;
+    color: var(--jobs-ink-2);
+}
+
+/* Focus clavier toujours visible */
+.jobs-icon-btn:focus-visible,
+.jobs-seg button:focus-visible,
+.jobs-toggle:focus-visible,
+.jobs-link-btn:focus-visible,
+.jobs-tab:focus-visible,
+:root .fi-sidebar-item-btn:focus-visible,
+:root .fi-btn:focus-visible {
+    outline: 3px solid var(--jobs-blue);
+    outline-offset: 2px;
+}
+
+/* ---------- Barre d'onglets mobile ---------- */
+.jobs-tabbar { display: none; }
+@media (max-width: 63.99rem) {
+    .jobs-tabbar {
+        position: fixed;
+        left: .75rem;
+        right: .75rem;
+        bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+        z-index: 25;
+        display: flex;
+        justify-content: space-around;
+        padding: .35rem;
+        border-radius: 1.6rem;
+        background-color: var(--jobs-chrome);
+        -webkit-backdrop-filter: var(--jobs-blur);
+        backdrop-filter: var(--jobs-blur);
+        box-shadow: var(--jobs-shadow-float), inset 0 1px 0 var(--jobs-rim), 0 0 0 1px var(--jobs-ring);
+    }
+    :root .fi-main-ctn { padding-bottom: 6.5rem; }
+}
+.jobs-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+    min-height: 3rem;
+    padding: .4rem .2rem;
+    border-radius: 1.2rem;
+    font-size: .68rem;
+    font-weight: 600;
+    color: var(--jobs-ink-2);
+    text-decoration: none;
+    transition: background-color .2s ease, color .2s ease, transform .18s var(--jobs-ease);
+}
+.jobs-tab:active { transform: scale(.95); }
+.jobs-tab.jobs-on { color: var(--jobs-blue); background-color: var(--jobs-blue-soft); }
+.jobs-tab-icon { width: 1.4rem; height: 1.4rem; }
+
+/* =====================================================================
+ * Lisibilité : réglages choisis dans le panneau ou par le système
+ * ===================================================================== */
+
+/* Contraste renforcé */
+html:root.jobs-contraste {
+    --jobs-ink-2: var(--jobs-ink);
+    --jobs-card: var(--jobs-solid);
+    --jobs-chrome: var(--jobs-solid);
+    --jobs-float: var(--jobs-solid);
+    --jobs-ring: rgba(11, 27, 51, .55);
+    --jobs-hair: rgba(11, 27, 51, .3);
+}
+html:root.jobs-contraste.dark {
+    --jobs-ring: rgba(255, 255, 255, .6);
+    --jobs-hair: rgba(255, 255, 255, .35);
+}
+html.jobs-contraste .fi-body { --gray-500: var(--gray-700); --gray-400: var(--gray-600); }
+html.jobs-contraste.dark .fi-body { --gray-400: var(--gray-200); --gray-500: var(--gray-300); }
+
+/* Réduire la transparence : surfaces pleines, sans flou */
+html:root.jobs-opaque,
+html:root.jobs-contraste {
+    --jobs-card: var(--jobs-solid);
+    --jobs-chrome: var(--jobs-solid);
+    --jobs-float: var(--jobs-solid);
+}
+html.jobs-opaque *,
+html.jobs-contraste * {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Police haute lisibilité */
+html:root.jobs-police {
+    --font-family: 'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, system-ui;
+}
+html.jobs-police .fi-body { letter-spacing: .01em; }
+
+/* Interligne aéré */
+html.jobs-interligne .fi-body { line-height: 1.8; }
+html.jobs-interligne .fi-body :where(p, li, td, dd, .fi-ta-text-item-label, .fi-in-text-item) { line-height: 1.8; }
+
+/* Souligner les liens */
+html.jobs-liens .fi-body a:not(.fi-btn):not(.fi-sidebar-item-btn):not(.fi-tabs-item):not(.jobs-tab):not(.fi-logo):not(.fi-dropdown-list-item),
+html.jobs-liens .fi-body .fi-link {
+    text-decoration: underline;
+    text-underline-offset: .18em;
+}
+
+/* Réduire les animations : fondus seulement */
+html.jobs-calme *,
+html.jobs-calme *::before,
+html.jobs-calme *::after {
+    animation: none !important;
+    transition-property: opacity, background-color, color !important;
+    transition-duration: .15s !important;
+}
+html.jobs-calme .jobs-materialize-from { transform: none; filter: none; }
+html.jobs-calme :is(.fi-btn, .fi-sidebar-item-btn, .jobs-tab, .jobs-icon-btn):active,
+html.jobs-calme .fi-wi-stats-overview-stat:hover { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition-property: opacity, background-color, color !important;
+        transition-duration: .15s !important;
+    }
+    .jobs-materialize-from { transform: none; filter: none; }
+    :is(.fi-btn, .fi-sidebar-item-btn, .jobs-tab, .jobs-icon-btn):active,
+    .fi-wi-stats-overview-stat:hover { transform: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+    html:root {
+        --jobs-card: var(--jobs-solid);
+        --jobs-chrome: var(--jobs-solid);
+        --jobs-float: var(--jobs-solid);
+    }
+    * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+@media (prefers-contrast: more) {
+    html:root {
+        --jobs-ink-2: var(--jobs-ink);
+        --jobs-card: var(--jobs-solid);
+        --jobs-chrome: var(--jobs-solid);
+        --jobs-float: var(--jobs-solid);
+        --jobs-ring: rgba(11, 27, 51, .55);
+    }
+    html:root.dark { --jobs-ring: rgba(255, 255, 255, .6); }
+}
+@media (forced-colors: active) {
+    .jobs-switch { border: 1px solid CanvasText; }
+    .jobs-toggle.jobs-on .jobs-switch { background: Highlight; }
+}
+
+/* Impression : pas de verre ni de barres */
+@media print {
+    .jobs-tabbar, .jobs-lisibilite { display: none !important; }
+    :root .fi-body::before { display: none; }
+}
+
+/* Les fenêtres ouvertes depuis la barre du haut sont déjà dans une surface en verre :
+ * un second flou y serait inopérant, on les rend donc pleines pour rester parfaitement lisibles. */
+:root .fi-topbar .fi-dropdown-panel,
+.jobs-panneau {
+    background-color: var(--jobs-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
