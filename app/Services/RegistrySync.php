@@ -20,7 +20,7 @@ class RegistrySync
     /** Délai minimal entre deux synchronisations automatiques (minutes). */
     public const STALE_AFTER = 5;
 
-    public function __construct(private RegistryImporter $importer, private Sheets $sheets) {}
+    public function __construct(private RegistryImporter $importer, private Sheets $sheets, private ProspectImporter $prospects) {}
 
     /**
      * Raison pour laquelle la synchronisation n'est pas possible, ou null si elle l'est.
@@ -45,7 +45,7 @@ class RegistrySync
     }
 
     /**
-     * @return array{created: int, updated: int, skipped: int, errors: list<string>}
+     * @return array{created: int, updated: int, skipped: int, errors: list<string>, prospects?: array|null}
      *
      * @throws GoogleException|RuntimeException
      */
@@ -69,6 +69,7 @@ class RegistrySync
                 config('services.google.registry_range'),
             );
             $result = $this->importer->sync($values);
+            $result['prospects'] = $this->syncProspects();
 
             $connection->forceFill([
                 'registry_synced_at' => now(),
@@ -88,6 +89,30 @@ class RegistrySync
         } finally {
             $lock->release();
         }
+    }
+
+    /**
+     * Onglet « Spontanées » : entreprises cibles des candidatures spontanées.
+     * Un onglet absent n'est pas une erreur.
+     *
+     * @return array{created: int, updated: int, skipped: int, errors: list<string>}|null
+     */
+    private function syncProspects(): ?array
+    {
+        try {
+            $values = $this->sheets->values(
+                config('services.google.registry_spreadsheet_id'),
+                config('services.google.prospects_range'),
+            );
+        } catch (GoogleException $e) {
+            if (str_contains($e->getMessage(), 'Unable to parse range')) {
+                return null;
+            }
+
+            throw $e;
+        }
+
+        return $this->prospects->sync($values);
     }
 
     /**
@@ -116,8 +141,15 @@ class RegistrySync
     {
         $summary = "{$result['created']} ajoutée(s), {$result['updated']} mise(s) à jour, {$result['skipped']} sans changement.";
 
-        if ($result['errors']) {
-            $summary .= ' Lignes ignorées : '.implode(' ', array_slice($result['errors'], 0, 5));
+        $errors = $result['errors'];
+
+        if ($prospects = $result['prospects'] ?? null) {
+            $summary .= " Candidatures spontanées : {$prospects['created']} ajoutée(s), {$prospects['updated']} mise(s) à jour.";
+            $errors = [...$errors, ...$prospects['errors']];
+        }
+
+        if ($errors) {
+            $summary .= ' Lignes ignorées : '.implode(' ', array_slice($errors, 0, 5));
         }
 
         return $summary;

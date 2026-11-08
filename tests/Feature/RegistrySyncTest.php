@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\OpportunityStatus;
 use App\Models\GoogleConnection;
 use App\Models\Opportunity;
+use App\Models\Prospect;
 use App\Models\User;
 use App\Services\RegistrySync;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,13 +36,24 @@ class RegistrySyncTest extends TestCase
 
     private bool $faked = false;
 
+    /** Onglet « Spontanées » : null = absent du classeur. */
+    private ?array $prospectSheet = null;
+
     private function fakeSheet(array ...$rows): void
     {
         $this->sheet = [self::HEADER, ...$rows];
 
         if (! $this->faked) {
             $this->faked = true;
-            Http::fake(['sheets.googleapis.com/*' => fn () => Http::response(['values' => $this->sheet])]);
+            Http::fake(['sheets.googleapis.com/*' => function ($request) {
+                if (str_contains(rawurldecode($request->url()), 'Spontanées')) {
+                    return $this->prospectSheet === null
+                        ? Http::response(['error' => ['message' => 'Unable to parse range: Spontanées!A1:AA1000']], 400)
+                        : Http::response(['values' => $this->prospectSheet]);
+                }
+
+                return Http::response(['values' => $this->sheet]);
+            }]);
         }
     }
 
@@ -139,5 +151,39 @@ class RegistrySyncTest extends TestCase
     {
         $this->artisan('registre:synchroniser')->assertSuccessful();
         Http::assertNothingSent();
+    }
+
+    private const PROSPECT_HEADER = ["Date d'ajout", 'Entreprise', 'Famille', 'Secteur', 'Localité', 'Site web', 'Employés', 'Signal', 'Date du signal', 'Source du signal', 'Raisons', "Pistes d'apport", 'Contact', 'Fonction', 'E-mail', 'LinkedIn', 'Canal', 'Note (1-3)', 'Langue', 'Statut', "Date d'envoi", 'Relance prévue', 'Date de réponse', 'Type de réponse', 'Recontact', 'Documents', 'Notes'];
+
+    public function test_spontaneous_tab_creates_targets(): void
+    {
+        $this->connect();
+        $this->prospectSheet = [
+            self::PROSPECT_HEADER,
+            ['2026-11-08', 'Bobst', 'Grande', 'Industrie', 'Mex', 'bobst.com', '6000', 'Nouvelle usine', '2026-10-20', 'https://www.24heures.ch/x', 'Croissance internationale', 'Structurer la communication digitale', '', '', '', '', 'Portail carrière', '3', 'FR', 'À qualifier'],
+            ['2026-11-08', 'Pixel Studio', 'Petite', 'Agence web', 'Lausanne'],
+        ];
+        $this->fakeSheet($this->row());
+
+        $result = app(RegistrySync::class)->sync();
+
+        $this->assertSame(2, $result['prospects']['created']);
+        $this->assertTrue(Prospect::query()->firstWhere('company', 'Pixel Studio')->isWebAgency());
+        $bobst = Prospect::query()->firstWhere('company', 'Bobst');
+        $this->assertSame('grande', $bobst->family);
+        $this->assertSame('portail', $bobst->channel);
+        $this->assertSame('https://bobst.com', $bobst->website);
+        $this->assertStringContainsString('Candidatures spontanées : 2 ajoutée(s)', GoogleConnection::current()->registry_sync_summary);
+    }
+
+    public function test_missing_spontaneous_tab_is_not_an_error(): void
+    {
+        $this->connect();
+        $this->fakeSheet($this->row());
+
+        $result = app(RegistrySync::class)->sync();
+
+        $this->assertNull($result['prospects']);
+        $this->assertNull(GoogleConnection::current()->registry_sync_error);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Opportunities\Actions;
 
 use App\Enums\ApplicationStatus;
+use App\Filament\Resources\Opportunities\OpportunityResource;
 use App\Models\Application;
 use App\Models\Opportunity;
 use App\Services\ApplicationDraftImporter;
@@ -12,6 +13,7 @@ use App\Services\Google\GoogleClient;
 use App\Services\Google\GoogleException;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
@@ -44,9 +46,9 @@ class ApplicationActions
             ->modalWidth('3xl')
             ->modalSubmitActionLabel('Enregistrer')
             ->fillForm(fn (Opportunity $record) => [
-                'to_email' => $record->application?->to_email,
+                'to_email' => $record->application?->to_email ?? $record->prospect?->contact_email,
                 'cc' => $record->application?->cc,
-                'subject' => $record->application?->subject ?? 'Candidature – '.$record->title,
+                'subject' => $record->application?->subject ?? ($record->prospect ? 'Candidature spontanée' : 'Candidature – '.$record->title),
                 'body' => $record->application?->body ?? (filled(config('dashboard.signature')) ? "\n\n".config('dashboard.signature') : null),
                 'keep' => $record->application?->attachments->pluck('id')->map(fn ($id) => (string) $id)->all() ?? [],
             ])
@@ -55,7 +57,7 @@ class ApplicationActions
                 TextInput::make('cc')->label('Copie (facultatif)')->placeholder('adresse1@…, adresse2@…'),
                 TextInput::make('subject')->label('Objet')->required()->maxLength(255),
                 Textarea::make('body')->label('Message')->required()->rows(12),
-                \Filament\Forms\Components\CheckboxList::make('keep')
+                CheckboxList::make('keep')
                     ->label('Pièces jointes actuelles')
                     ->options(fn (Opportunity $record) => $record->application?->attachments->mapWithKeys(fn ($a) => [(string) $a->id => $a->name.' ('.self::size($a->size).')'])->all() ?? [])
                     ->visible(fn (Opportunity $record) => $record->application?->attachments->isNotEmpty() ?? false)
@@ -99,7 +101,7 @@ class ApplicationActions
 
                 Notification::make()->title('Candidature enregistrée')->body('Elle est prête à être validée.')->success()->send();
             })
-            ->after(fn ($livewire) => $livewire->redirect(\App\Filament\Resources\Opportunities\OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
+            ->after(fn ($livewire) => $livewire->redirect(OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
     }
 
     public static function importDraft(): Action
@@ -140,7 +142,7 @@ class ApplicationActions
                     Notification::make()->title('Import impossible')->body($e->getMessage())->danger()->send();
                 }
             })
-            ->after(fn ($livewire) => $livewire->redirect(\App\Filament\Resources\Opportunities\OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
+            ->after(fn ($livewire) => $livewire->redirect(OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
     }
 
     public static function validateAndSend(): Action
@@ -185,7 +187,7 @@ class ApplicationActions
                     ->persistent()
                     ->send();
             })
-            ->after(fn ($livewire) => $livewire->redirect(\App\Filament\Resources\Opportunities\OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
+            ->after(fn ($livewire) => $livewire->redirect(OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
     }
 
     public static function discard(): Action
@@ -201,7 +203,7 @@ class ApplicationActions
                 $record->application->delete();
                 Notification::make()->title('Candidature supprimée')->success()->send();
             })
-            ->after(fn ($livewire) => $livewire->redirect(\App\Filament\Resources\Opportunities\OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
+            ->after(fn ($livewire) => $livewire->redirect(OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
     }
 
     public static function summaryHtml(Application $application): string

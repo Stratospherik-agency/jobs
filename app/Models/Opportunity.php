@@ -126,6 +126,9 @@ class Opportunity extends Model
                     'to_status' => $opportunity->status->value,
                     'happened_at' => now(),
                 ]);
+
+                // Candidature spontanée : la cible suit l'avancement.
+                Prospect::mirror($opportunity);
             }
         });
     }
@@ -133,6 +136,12 @@ class Opportunity extends Model
     public function application(): HasOne
     {
         return $this->hasOne(Application::class);
+    }
+
+    /** Entreprise cible, pour une candidature spontanée. */
+    public function prospect(): HasOne
+    {
+        return $this->hasOne(Prospect::class);
     }
 
     public function events(): HasMany

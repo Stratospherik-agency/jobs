@@ -24,7 +24,7 @@ class OrpProof extends Page
 
     protected static ?string $slug = 'justificatif-orp';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 7;
 
     /** @var array<string, mixed> */
     public ?array $data = [];

@@ -60,6 +60,37 @@ final class Catalog
         'autre' => 'Autre',
     ];
 
+    /** Candidatures spontanées : familles d'entreprises cibles. */
+    public const PROSPECT_FAMILIES = [
+        'institution' => 'Institution',
+        'grande' => 'Grande',
+        'moyenne' => 'Moyenne',
+        'petite' => 'Petite',
+    ];
+
+    /** Candidatures spontanées : canal d'envoi. */
+    public const PROSPECT_CHANNELS = [
+        'portail' => 'Portail carrière',
+        'email' => 'E-mail direct',
+        'reseau' => 'Réseau',
+    ];
+
+    /** Candidatures spontanées : type de réponse. */
+    public const PROSPECT_RESPONSES = [
+        'entretien' => 'Entretien',
+        'refus' => 'Refus',
+        'vivier' => 'Vivier',
+        'sans_reponse' => 'Sans réponse',
+    ];
+
+    /** Agences web : Pierre ne les vise que pour un poste de gestion de projets (signalées, pas bloquées). */
+    public static function isWebAgency(?string ...$texts): bool
+    {
+        $text = mb_strtolower(implode(' ', array_filter($texts)));
+
+        return (bool) preg_match('/agence\s+(web|digitale|de\s+communication\s+digitale|de\s+marketing\s+digital|internet)|web\s*agency|digital\s+agency|agence\s+de\s+cr[ée]ation\s+de\s+sites/u', $text);
+    }
+
     public const SECTORS = [
         'Tech et logiciels', 'Industrie', 'Horlogerie et luxe', 'Banque et assurance', 'Santé et pharma',
         'Biotech et medtech', 'Commerce et distribution', 'Télécoms', 'Médias et communication',
