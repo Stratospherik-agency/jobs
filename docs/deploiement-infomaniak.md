@@ -8,7 +8,7 @@ Les libellés exacts du Manager peuvent varier légèrement.
 1. **Sous-domaine** : ajouter le site `jobs.pierreolliviertissier.ch` sur l'hébergement.
    Le DNS étant chez Infomaniak, l'enregistrement est créé automatiquement.
 2. **Dossier racine du site** : le faire pointer vers le dossier `public` de l'application,
-   par exemple `~/sites/jobs.pierreolliviertissier.ch/public`. Rien d'autre ne doit être exposé.
+   par exemple `~/sites-production/pierreolliviertissier/jobs.pierreolliviertissier.ch/public`. Rien d'autre ne doit être exposé.
 3. **PHP** : version 8.3 ou plus récente pour ce site.
 4. **Certificat SSL** : activer Let's Encrypt sur le sous-domaine, puis la redirection HTTPS.
 5. **Base de données** : créer une base MySQL/MariaDB et un utilisateur dédiés, avec un mot de passe long.
@@ -34,7 +34,7 @@ Host github-jobs
   IdentitiesOnly yes
 CFG
 
-cd ~/sites
+cd ~/sites-production/pierreolliviertissier
 git clone git@github-jobs:Stratospherik-agency/jobs.git jobs.pierreolliviertissier.ch
 cd jobs.pierreolliviertissier.ch
 ```
@@ -56,7 +56,7 @@ chiffrés en base (double authentification, futurs accès Google) sont illisible
 À lancer au premier déploiement, puis à chaque nouvelle version :
 
 ```bash
-cd ~/sites/jobs.pierreolliviertissier.ch
+cd ~/sites-production/pierreolliviertissier/jobs.pierreolliviertissier.ch
 php artisan down
 git pull --ff-only
 composer install --no-dev --optimize-autoloader --no-interaction
@@ -81,7 +81,7 @@ authentification (scanner le QR code, puis conserver les 8 codes de secours hors
 Dans le Manager (Tâches planifiées / Cron) ou par `crontab -e`, toutes les minutes :
 
 ```
-* * * * * cd ~/sites/jobs.pierreolliviertissier.ch && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd ~/sites-production/pierreolliviertissier/jobs.pierreolliviertissier.ch && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Elles serviront aux synchronisations Gmail et Sheets des étapes suivantes.
