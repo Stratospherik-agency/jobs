@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    // Accès OAuth au compte Google du propriétaire (Gmail et Drive).
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/google/callback'),
+        'scopes' => [
+            'openid',
+            'email',
+            // Lire les échanges, importer les brouillons et envoyer les candidatures validées.
+            'https://www.googleapis.com/auth/gmail.modify',
+            // Uniquement les fichiers et dossiers créés par le tableau de bord.
+            'https://www.googleapis.com/auth/drive.file',
+        ],
+        'drive_root_folder' => env('GOOGLE_DRIVE_FOLDER', 'Candidatures'),
+    ],
+
 ];

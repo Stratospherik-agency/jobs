@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Opportunity extends Model
 {
@@ -62,6 +63,11 @@ class Opportunity extends Model
             }
         });
 
+        // Supprime aussi les pièces jointes stockées sur le serveur.
+        static::deleting(function (Opportunity $opportunity) {
+            $opportunity->application?->delete();
+        });
+
         static::created(function (Opportunity $opportunity) {
             $opportunity->events()->create([
                 'type' => 'statut',
@@ -82,6 +88,11 @@ class Opportunity extends Model
                 ]);
             }
         });
+    }
+
+    public function application(): HasOne
+    {
+        return $this->hasOne(Application::class);
     }
 
     public function events(): HasMany
