@@ -4,7 +4,7 @@ Application privée de Pierre-Ollivier Tissier, servie sur `jobs.pierreolliviert
 Elle centralise les opportunités d'emploi, la correspondance, les candidatures et les documents adaptés
 à chaque poste. Aucune candidature n'est envoyée sans validation explicite dans l'interface.
 
-Pile : Laravel 13, Filament 4, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
+Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
 
 ## Sécurité en place
 
