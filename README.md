@@ -6,6 +6,17 @@ Elle centralise les opportunités d'emploi, la correspondance, les candidatures 
 
 Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
 
+## Fonctionnalités
+
+- **Opportunités** : offres avec entreprise, poste, lieu, taux, source, lien, pertinence (1 à 3) et statut
+  (mêmes statuts que le registre Google Sheets). Filtres, recherche, changement de statut en lot.
+- **Suivi de candidature** : au passage à « Candidature envoyée », la date d'envoi et une relance à 10 jours
+  sont remplies automatiquement ; un dossier clos (refus, écartée, offre reçue) n'a plus de relance.
+- **Historique** : chaque changement de statut est journalisé, et des notes datées peuvent être ajoutées.
+- **Tableau de bord** : chiffres clés, relances à faire, meilleures pistes à traiter.
+- **Import du registre** : bouton « Importer le registre » (export CSV de Google Sheets), ou
+  `php artisan registre:importer fichier.csv`. Les offres déjà présentes sont ignorées.
+
 ## Sécurité en place
 
 | Mesure | Détail |
