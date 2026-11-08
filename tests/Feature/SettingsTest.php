@@ -108,4 +108,20 @@ class SettingsTest extends TestCase
 
         $this->assertSame('Pierre-Ollivier Tissier', config('dashboard.signature'));
     }
+
+    public function test_google_guide_opens_in_a_window(): void
+    {
+        $this->actingAs($this->owner());
+
+        Livewire::test(SettingsPage::class)
+            ->assertActionExists('guide_header')
+            ->mountAction('guide_header')
+            ->assertActionMounted('guide_header');
+
+        $html = SettingsPage::guideHtml();
+        $this->assertStringContainsString('Créer le projet', $html);
+        $this->assertStringContainsString(config('services.google.redirect'), $html);
+        $this->assertStringContainsString('target="_blank" rel="noopener noreferrer"', $html);
+        $this->assertStringNotContainsString('jobs.pierreolliviertissier.ch/google/callback', $html);
+    }
 }

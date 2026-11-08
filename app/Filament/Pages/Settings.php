@@ -22,6 +22,7 @@ use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 /**
  * Réglages de la plateforme. Toutes les valeurs sont chiffrées en base ; le code secret
@@ -70,7 +71,8 @@ class Settings extends Page
                             ->icon('heroicon-o-link')
                             ->schema([
                                 Section::make('Identifiants du client OAuth')
-                                    ->description('Créés dans Google Cloud (guide pas à pas : docs/google-cloud.md, étapes 1 à 4).')
+                                    ->description('Créés dans Google Cloud. Le guide pas à pas explique où les trouver.')
+                                    ->headerActions([$this->guideAction()])
                                     ->schema([
                                         TextInput::make('redirect_uri')
                                             ->label('URI de redirection à copier dans Google Cloud')
@@ -136,6 +138,46 @@ class Settings extends Page
                             ]),
                     ]),
             ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [$this->guideAction()->name('guide_header')];
+    }
+
+    /**
+     * Guide de connexion aux services Google, affiché dans une fenêtre latérale.
+     */
+    public function guideAction(): Action
+    {
+        return Action::make('guide')
+            ->label('Guide de connexion Google')
+            ->icon('heroicon-o-question-mark-circle')
+            ->color('gray')
+            ->modalHeading('Connecter Gmail, Drive et Sheets')
+            ->modalDescription('À faire une seule fois, connecté à ton compte Google. Compte environ 15 minutes.')
+            ->modalContent(fn () => new HtmlString('<div class="fi-prose">'.self::guideHtml().'</div>'))
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Fermer')
+            ->slideOver()
+            ->modalWidth('2xl');
+    }
+
+    /**
+     * Contenu de docs/google-cloud.md, avec l'URI de redirection réelle de ce site.
+     */
+    public static function guideHtml(): string
+    {
+        $path = base_path('docs/google-cloud.md');
+        $markdown = is_file($path) ? (string) file_get_contents($path) : 'Guide introuvable : docs/google-cloud.md.';
+
+        $markdown = preg_replace('/^# .*\R+/u', '', $markdown, 1); // le titre est déjà dans la fenêtre
+        $markdown = str_replace('https://jobs.pierreolliviertissier.ch/google/callback', (string) config('services.google.redirect'), $markdown);
+
+        $html = Str::markdown($markdown, ['html_input' => 'escape', 'allow_unsafe_links' => false]);
+
+        // Liens externes dans un nouvel onglet, sans transmettre l'adresse du tableau de bord.
+        return preg_replace('/<a href="(https?:[^"]+)">/', '<a href="$1" target="_blank" rel="noopener noreferrer">', $html);
     }
 
     public function content(Schema $schema): Schema
