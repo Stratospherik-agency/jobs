@@ -143,6 +143,24 @@ final class Catalog
         };
     }
 
+    /** Zones du canton de Vaud : mots repérés dans le champ « Lieu ». */
+    public const ZONES = [
+        'Lausanne et Ouest lausannois' => ['lausanne', 'renens', 'prilly', 'ecublens', 'écublens', 'crissier', 'bussigny', 'chavannes', 'saint-sulpice', 'st-sulpice', 'epalinges', 'épalinges', 'pully', 'le mont', 'romanel', 'cheseaux', 'biopôle', 'biopole', 'epfl', 'unil'],
+        'Lavaux et Riviera' => ['lutry', 'cully', 'lavaux', 'vevey', 'montreux', 'la tour-de-peilz', 'clarens', 'chexbres', 'blonay', 'corsier', 'caux'],
+        'La Côte' => ['morges', 'nyon', 'rolle', 'gland', 'aubonne', 'saint-prex', 'st-prex', 'etoy', 'allaman', 'coppet', 'préverenges', 'preverenges', 'tolochenaz', 'apples'],
+        'Nord vaudois et Broye' => ['yverdon', 'orbe', 'grandson', 'sainte-croix', 'vallorbe', 'payerne', 'moudon', 'avenches', 'lucens', 'chavornay'],
+        'Chablais vaudois' => ['aigle', 'bex', 'villeneuve', 'leysin', 'villars', 'ollon'],
+        'Gros-de-Vaud' => ['echallens', 'échallens', 'oron', 'mézières', 'mezieres'],
+        'Tout le canton (Vaud)' => ['vaud', 'vd'],
+    ];
+
+    /** Mots recherchés dans « Source » pour chaque plateforme. */
+    public const SOURCE_NEEDLES = [
+        'indeed' => ['indeed'], 'jobup' => ['jobup'], 'linkedin' => ['linkedin'], 'google' => ['google'],
+        'jobs.ch' => ['jobs.ch'], 'site' => ['site', 'carrière', 'careers'], 'spontanee' => ['spontan'],
+        'reseau' => ['réseau', 'reseau'],
+    ];
+
     public const SECTORS = [
         'Tech et logiciels', 'Industrie', 'Horlogerie et luxe', 'Banque et assurance', 'Santé et pharma',
         'Biotech et medtech', 'Commerce et distribution', 'Télécoms', 'Médias et communication',

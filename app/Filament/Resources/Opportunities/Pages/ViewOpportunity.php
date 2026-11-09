@@ -4,8 +4,9 @@ namespace App\Filament\Resources\Opportunities\Pages;
 
 use App\Enums\OpportunityStatus;
 use App\Filament\Resources\Opportunities\Actions\ApplicationActions;
-use App\Filament\Resources\Opportunities\Widgets\Correspondence;
+use App\Filament\Resources\Opportunities\Actions\OpportunityActions;
 use App\Filament\Resources\Opportunities\OpportunityResource;
+use App\Filament\Resources\Opportunities\Widgets\Correspondence;
 use App\Models\Opportunity;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -34,6 +35,8 @@ class ViewOpportunity extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            OpportunityActions::ignore()->after(fn () => $this->redirect(OpportunityResource::getUrl('index'), navigate: true)),
+            OpportunityActions::restore()->after(fn () => $this->redirect(OpportunityResource::getUrl('view', ['record' => $this->getRecord()]), navigate: true)),
             ApplicationActions::validateAndSend(),
             ActionGroup::make([
                 ApplicationActions::prepare(),
