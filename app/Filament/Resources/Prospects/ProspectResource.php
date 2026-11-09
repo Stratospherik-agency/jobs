@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class ProspectResource extends Resource
 {
@@ -27,6 +28,8 @@ class ProspectResource extends Resource
     protected static ?string $pluralModelLabel = 'candidatures spontanées';
 
     protected static ?string $navigationLabel = 'Candidatures spontanées';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Candidatures';
 
     protected static ?int $navigationSort = 2;
 

@@ -13,6 +13,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /**
  * Connexion du tableau de bord au compte Google (Gmail et Drive).
@@ -22,6 +23,8 @@ class GoogleAccount extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLink;
 
     protected static ?string $navigationLabel = 'Compte Google';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Compte';
 
     protected static ?string $title = 'Compte Google';
 
