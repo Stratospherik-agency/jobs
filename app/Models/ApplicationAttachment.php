@@ -21,6 +21,11 @@ class ApplicationAttachment extends Model
         return $this->belongsTo(Application::class);
     }
 
+    public function isPdf(): bool
+    {
+        return $this->mime === 'application/pdf' || str_ends_with(mb_strtolower($this->name), '.pdf');
+    }
+
     public function contents(): string
     {
         return (string) Application::attachmentDisk()->get($this->path);
