@@ -287,8 +287,10 @@ html[data-texte='130'] { font-size: 130%; }
     from { opacity: 0; transform: scale(.94) translateY(-4px); filter: blur(6px); }
     to { opacity: 1; transform: none; filter: none; }
 }
+/* « backwards » et non « both » : une animation de transform qui reste appliquée fait de chaque
+   bloc de la page le repère des fenêtres en position fixe, qui s'ouvraient alors hors de l'écran. */
 :root .fi-page > * {
-    animation: jobs-rise .6s var(--jobs-ease) both;
+    animation: jobs-rise .6s var(--jobs-ease) backwards;
 }
 :root .fi-page > *:nth-child(2) { animation-delay: .05s; }
 :root .fi-page > *:nth-child(3) { animation-delay: .1s; }

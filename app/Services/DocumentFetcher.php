@@ -65,10 +65,33 @@ class DocumentFetcher
             return $result; // dossier figé une fois la candidature partie
         }
 
+        $result['renamed'] = 0;
+        $result['removed'] = 0;
+
+        if ($application) {
+            $hashes = array_map(fn ($f) => hash('sha256', $f['url']), $files);
+            $names = array_column($files, 'name');
+
+            // Les PDF venus de Canva qui ne figurent plus dans le registre (lien et nom) sont retirés.
+            // Les pièces jointes ajoutées à la main (sans source_hash) ne sont jamais touchées.
+            $application->attachments()->whereNotNull('source_hash')->get()
+                ->reject(fn ($a) => in_array($a->source_hash, $hashes, true) || in_array($a->name, $names, true))
+                ->each(function ($a) use (&$result) {
+                    $a->delete();
+                    $result['removed']++;
+                });
+        }
+
         foreach ($files as $file) {
             $hash = hash('sha256', $file['url']);
 
-            if ($application && $application->attachments()->where('source_hash', $hash)->exists()) {
+            if ($application && ($existing = $application->attachments()->where('source_hash', $hash)->first())) {
+                // Même lien, nouveau nom dans le registre : on renomme sans retélécharger.
+                if ($existing->name !== $file['name']) {
+                    $existing->update(['name' => $file['name']]);
+                    $result['renamed']++;
+                }
+
                 continue;
             }
 
@@ -119,15 +142,21 @@ class DocumentFetcher
             $result['imported']++;
         }
 
-        if ($result['imported']) {
+        $changes = array_filter([
+            $result['imported'] ? $result['imported'].' ajouté(s)' : null,
+            $result['renamed'] ? $result['renamed'].' renommé(s)' : null,
+            $result['removed'] ? $result['removed'].' retiré(s)' : null,
+        ]);
+
+        if ($changes) {
             $opportunity->events()->create([
                 'type' => 'note',
-                'body' => $result['imported'].' document(s) PDF ajouté(s) depuis Canva',
+                'body' => 'Documents PDF depuis Canva : '.implode(', ', $changes),
                 'happened_at' => now(),
             ]);
         }
 
-        return $result;
+        return ['imported' => $result['imported'], 'errors' => $result['errors']];
     }
 
     /**
