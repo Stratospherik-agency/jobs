@@ -8,6 +8,8 @@ use App\Filament\Resources\Opportunities\Pages\ViewOpportunity;
 use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -73,5 +75,27 @@ class OpportunityFiltersTest extends TestCase
             ->filterTable('relevance', [3, 2])
             ->assertCanSeeTableRecords([$lausanne, $vevey])
             ->assertCanNotSeeTableRecords([$morges]);
+    }
+
+    public function test_documents_can_be_added_without_an_email_and_survive_the_registry_sync(): void
+    {
+        Storage::fake('local');
+        $offer = Opportunity::factory()->create();
+        $cv = UploadedFile::fake()->createWithContent('Sonic-Suisse_CV_pierre-ollivier_tissier.pdf', "%PDF-1.4\n%%EOF");
+
+        Livewire::test(ViewOpportunity::class, ['record' => $offer->id])
+            ->callAction('add_documents', ['files' => [$cv]])
+            ->assertHasNoActionErrors();
+
+        $application = $offer->fresh()->application;
+        $this->assertNull($application->to_email);
+        $this->assertSame(['Sonic-Suisse_CV_pierre-ollivier_tissier.pdf'], $application->attachments->pluck('name')->all());
+        $this->assertNull($application->attachments->first()->source_hash);
+
+        // La synchro des liens Canva ne retire pas un document ajouté à la main.
+        $offer->update(['documents_links' => 'Lettre.pdf : https://export-download.canva.com/x/lettre.pdf']);
+        \Illuminate\Support\Facades\Http::fake(["*" => \Illuminate\Support\Facades\Http::response("", 404)]);
+        app(\App\Services\DocumentFetcher::class)->fetch($offer->fresh());
+        $this->assertCount(1, $application->fresh()->attachments);
     }
 }

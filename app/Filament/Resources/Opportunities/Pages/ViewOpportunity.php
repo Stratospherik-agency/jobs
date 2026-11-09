@@ -42,6 +42,7 @@ class ViewOpportunity extends ViewRecord
             ApplicationActions::validateAndSend(),
             ActionGroup::make([
                 ApplicationActions::prepare(),
+                ApplicationActions::addDocuments(),
                 ApplicationActions::importDraft(),
                 ApplicationActions::discard(),
             ])

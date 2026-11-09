@@ -104,6 +104,64 @@ class ApplicationActions
             ->after(fn ($livewire) => $livewire->redirect(OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
     }
 
+    /**
+     * Ajoute des documents (CV, lettre, dossier…) à la candidature sans toucher au message,
+     * par exemple pour une candidature déposée sur une plateforme, sans e-mail.
+     * Ces fichiers n'ont pas de source_hash : la synchro du registre ne les retire jamais.
+     */
+    public static function addDocuments(): Action
+    {
+        return Action::make('add_documents')
+            ->label('Ajouter des documents')
+            ->icon('heroicon-o-paper-clip')
+            ->color('gray')
+            ->visible(fn (Opportunity $record) => ! $record->application?->isSent())
+            ->modalDescription('Un fichier qui porte le même nom qu\'un document déjà présent le remplace.')
+            ->modalSubmitActionLabel('Ajouter')
+            ->schema([
+                FileUpload::make('files')
+                    ->label('Documents')
+                    ->helperText('CV, lettre, dossier… PDF de préférence, 10 Mo maximum par fichier.')
+                    ->multiple()
+                    ->required()
+                    ->disk('local')
+                    ->directory('candidatures/tmp')
+                    ->visibility('private')
+                    ->acceptedFileTypes(self::ACCEPTED_TYPES)
+                    ->maxSize(10240)
+                    ->storeFileNamesIn('file_names'),
+            ])
+            ->action(function (Opportunity $record, array $data) {
+                $application = $record->application ?? $record->application()->create(['status' => ApplicationStatus::Draft]);
+                $disk = Application::attachmentDisk();
+                $added = 0;
+
+                foreach ((array) ($data['files'] ?? []) as $tmpPath) {
+                    $name = $data['file_names'][$tmpPath] ?? basename($tmpPath);
+                    $application->attachments()->where('name', $name)->get()->each->delete();
+
+                    $final = 'candidatures/'.$application->id.'/'.Str::random(12).'-'.Str::slug(pathinfo($name, PATHINFO_FILENAME)).'.'.strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                    $disk->move($tmpPath, $final);
+                    $application->attachments()->create([
+                        'name' => $name,
+                        'path' => $final,
+                        'mime' => $disk->mimeType($final) ?: 'application/octet-stream',
+                        'size' => $disk->size($final),
+                    ]);
+                    $added++;
+                }
+
+                $record->events()->create([
+                    'type' => 'note',
+                    'body' => "Documents ajoutés à la main : {$added}",
+                    'happened_at' => now(),
+                ]);
+
+                Notification::make()->title($added > 1 ? "{$added} documents ajoutés" : 'Document ajouté')->success()->send();
+            })
+            ->after(fn ($livewire) => $livewire->redirect(OpportunityResource::getUrl('view', ['record' => $livewire->getRecord()]), navigate: true));
+    }
+
     public static function importDraft(): Action
     {
         return Action::make('import_draft')
