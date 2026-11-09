@@ -84,6 +84,11 @@ class ProspectActions
             'ats_system' => $prospect->ats_system,
             'ats_score' => $prospect->ats_score,
             'ats_missing_keywords' => $prospect->ats_missing_keywords,
+            'documents_url' => $prospect->documents_url,
+            'cover_letter_text' => $prospect->cover_letter_text,
+            'message_subject' => $prospect->message_subject,
+            'message_body' => $prospect->message_body,
+            'documents_links' => $prospect->documents_links,
             'notes' => collect([
                 $prospect->reasons ? "Pourquoi cette entreprise :\n".$prospect->reasons : null,
                 $prospect->contributions ? "Pistes d'apport :\n".$prospect->contributions : null,

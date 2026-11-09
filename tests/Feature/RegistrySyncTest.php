@@ -45,11 +45,17 @@ class RegistrySyncTest extends TestCase
 
         if (! $this->faked) {
             $this->faked = true;
-            Http::fake(['sheets.googleapis.com/*' => function ($request) {
+            Http::fake(['*' => function ($request) {
                 if (str_contains(rawurldecode($request->url()), 'Spontanées')) {
                     return $this->prospectSheet === null
-                        ? Http::response(['error' => ['message' => 'Unable to parse range: Spontanées!A1:AE1000']], 400)
+                        ? Http::response(['error' => ['message' => 'Unable to parse range: Spontanées!A1:AZ1000']], 400)
                         : Http::response(['values' => $this->prospectSheet]);
+                }
+
+                if (str_contains($request->url(), 'export-download.canva.com')) {
+                    return str_contains($request->url(), 'expire')
+                        ? Http::response('AccessDenied', 403)
+                        : Http::response("%PDF-1.7\nfaux pdf", 200, ['Content-Type' => 'application/pdf']);
                 }
 
                 return Http::response(['values' => $this->sheet]);
@@ -202,5 +208,33 @@ class RegistrySyncTest extends TestCase
         $this->assertSame('Indeed (Indeed Apply)', $o->ats_system);
         $this->assertSame(67, $o->ats_score);
         $this->assertSame('CAD, simulation', $o->ats_missing_keywords);
+    }
+
+    public function test_documents_and_canva_pdfs_reach_the_offer(): void
+    {
+        $this->connect();
+        $header = [...self::HEADER, 'ATS', 'Outil ATS', 'Score ATS', 'Mots-clés manquants', 'Documents (Drive)', 'Lettre (texte)', 'Objet', "Message d'accompagnement", 'PDF (liens Canva)'];
+        $this->fakeSheet();
+        $links = "CV.pdf : https://export-download.canva.com/abc/cv.pdf?sig=1\nLettre.pdf : https://export-download.canva.com/expire/lettre.pdf\nAutre.pdf : https://evil.example.com/x.pdf";
+        $this->sheet = [$header, [...$this->row(), '', '', '', '', 'https://drive.google.com/drive/folders/abc', "Madame, Monsieur,\n\nJe postule.", 'Candidature – Technology Marketing Manager', 'Bonjour, voici ma candidature.', $links]];
+
+        $result = app(RegistrySync::class)->sync();
+
+        $o = Opportunity::query()->firstWhere('company', 'Neural Concept');
+        $this->assertSame("Madame, Monsieur,\n\nJe postule.", $o->cover_letter_text);
+        $this->assertSame('Bonjour, voici ma candidature.', $o->message_body);
+        $this->assertSame(['CV.pdf'], $o->application->attachments->pluck('name')->all());
+        $this->assertSame(1, $result['documents']['imported']);
+        $this->assertCount(2, $result['documents']['errors']); // lien expiré + domaine refusé
+
+        // Deuxième passage : rien n'est retéléchargé ni signalé à nouveau.
+        $again = app(RegistrySync::class)->sync();
+        $this->assertSame(0, $again['documents']['imported']);
+        $this->assertSame([], $again['documents']['errors']); // chaque échec n'est signalé qu'une fois par jour
+        Http::assertSentCount(6); // 2 synchros × (Offres + Spontanées) + 2 téléchargements
+
+        $owner = User::factory()->create(['email' => 'owner@example.test']);
+        $owner->saveAppAuthenticationSecret('JBSWY3DPEHPK3PXP');
+        $this->actingAs($owner)->get('/opportunites/'.$o->id)->assertOk()->assertSee('Je postule.')->assertSee('Copier');
     }
 }

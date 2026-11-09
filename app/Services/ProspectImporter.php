@@ -50,6 +50,12 @@ class ProspectImporter
         'score ats (%)' => 'ats_score',
         'score ats' => 'ats_score',
         'mots-clés manquants' => 'ats_missing_keywords',
+        'documents (drive)' => 'documents_url',
+        'lettre (texte)' => 'cover_letter_text',
+        'objet' => 'message_subject',
+        "message d'accompagnement" => 'message_body',
+        'pdf (liens canva)' => 'documents_links',
+        'pdf' => 'documents_links',
     ];
 
     private const CHOICES = [
@@ -142,6 +148,10 @@ class ProspectImporter
             if (filled($data[$attribute] ?? null)) {
                 $data[$attribute] = Catalog::keyFor($options, $data[$attribute]);
             }
+        }
+
+        if (filled($data['documents_url'] ?? null) && ! preg_match('#^https://#i', $data['documents_url'])) {
+            $data['documents_url'] = null; // n'accepter qu'un lien web sécurisé
         }
 
         if (filled($data['ats_score'] ?? null)) {

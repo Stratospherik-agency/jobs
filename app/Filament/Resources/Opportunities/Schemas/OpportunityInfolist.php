@@ -4,10 +4,12 @@ namespace App\Filament\Resources\Opportunities\Schemas;
 
 use App\Filament\Resources\Opportunities\Actions\ApplicationActions;
 use App\Models\Opportunity;
-use Illuminate\Support\HtmlString;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Js;
 
 class OpportunityInfolist
 {
@@ -48,6 +50,24 @@ class OpportunityInfolist
                         TextEntry::make('feedback')->label('Retour de l\'entreprise')->placeholder('—'),
                         TextEntry::make('added_at')->label('Ajoutée le')->date('d.m.Y'),
                     ]),
+                Section::make('Documents de candidature')
+                    ->icon('heroicon-o-document-text')
+                    ->description('Préparés pour cette offre. Les PDF arrivent dans la section Candidature ci-dessous.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Opportunity $record) => filled($record->documents_url) || filled($record->cover_letter_text) || filled($record->message_body))
+                    ->schema([
+                        TextEntry::make('documents_url')
+                            ->label('Dossier des documents')
+                            ->formatStateUsing(fn () => 'Ouvrir le dossier Google Drive')
+                            ->url(fn (Opportunity $record) => $record->documents_url, shouldOpenInNewTab: true)
+                            ->icon('heroicon-o-folder-open')
+                            ->visible(fn (Opportunity $record) => filled($record->documents_url)),
+                        self::copyBlock('cover_letter_text', 'Lettre de motivation (texte à copier)', 'Lettre copiée'),
+                        TextEntry::make('message_subject')->label('Objet')->copyable()->copyMessage('Objet copié')
+                            ->visible(fn (Opportunity $record) => filled($record->message_subject)),
+                        self::copyBlock('message_body', 'Message d\'accompagnement', 'Message copié'),
+                    ]),
                 Section::make('Candidature')
                     ->icon('heroicon-o-envelope')
                     ->columnSpanFull()
@@ -84,5 +104,25 @@ class OpportunityInfolist
                             ->columnSpanFull(),
                     ]),
             ]);
+    }
+
+    /**
+     * Bloc de texte lisible, avec un bouton « Copier » pour le coller sur une plateforme.
+     */
+    private static function copyBlock(string $field, string $label, string $done): TextEntry
+    {
+        return TextEntry::make($field)
+            ->label($label)
+            ->visible(fn (Opportunity $record) => filled($record->{$field}))
+            ->formatStateUsing(fn (?string $state) => new HtmlString('<div style="white-space:pre-wrap;line-height:1.6">'.e((string) $state).'</div>'))
+            ->extraAttributes(['class' => 'rounded-lg border border-gray-200 p-4 dark:border-white/10'])
+            ->hintAction(
+                Action::make('copy_'.$field)
+                    ->label('Copier')
+                    ->icon('heroicon-o-clipboard-document')
+                    ->alpineClickHandler(fn (Opportunity $record) => 'window.navigator.clipboard.writeText('.Js::from((string) $record->{$field}).')'
+                        .'.then(() => new FilamentNotification().title('.Js::from($done).').success().send())'
+                        .'.catch(() => new FilamentNotification().title(\'Copie impossible : sélectionne le texte à la main.\').danger().send())')
+            );
     }
 }

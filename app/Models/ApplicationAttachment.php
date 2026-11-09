@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ApplicationAttachment extends Model
 {
-    protected $fillable = ['name', 'path', 'mime', 'size', 'drive_file_url'];
+    protected $fillable = ['name', 'path', 'mime', 'size', 'drive_file_url', 'source_hash'];
 
     protected static function booted(): void
     {

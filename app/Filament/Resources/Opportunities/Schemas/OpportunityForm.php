@@ -63,6 +63,17 @@ class OpportunityForm
                         TextInput::make('company_address')->label('Adresse de l\'entreprise')
                             ->helperText('Pour le justificatif ORP.')->maxLength(255),
                     ]),
+                Section::make('Documents de candidature')
+                    ->description('Remplis automatiquement depuis le registre quand Claude prépare la candidature.')
+                    ->columnSpan(2)
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        TextInput::make('documents_url')->label('Dossier des documents (lien Google Drive)')->url()->maxLength(500),
+                        Textarea::make('cover_letter_text')->label('Lettre de motivation (texte)')->rows(10),
+                        TextInput::make('message_subject')->label('Objet')->maxLength(255),
+                        Textarea::make('message_body')->label('Message d\'accompagnement')->rows(6),
+                    ]),
                 Section::make('ATS')
                     ->description('Système de tri des candidatures. Sert à voir s\'il pénalise tes envois.')
                     ->columnSpan(2)
