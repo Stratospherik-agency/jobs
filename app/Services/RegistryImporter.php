@@ -44,6 +44,12 @@ class RegistryImporter
         'salaire min' => 'salary_min',
         'salaire max' => 'salary_max',
         'adresse' => 'company_address',
+        'ats' => 'ats',
+        'système ats' => 'ats_system',
+        'outil ats' => 'ats_system',
+        'score ats (%)' => 'ats_score',
+        'score ats' => 'ats_score',
+        'mots-clés manquants' => 'ats_missing_keywords',
     ];
 
     /** Colonnes à liste fermée : libellé du registre → clé. */
@@ -53,6 +59,7 @@ class RegistryImporter
         'contract_type' => Catalog::CONTRACTS,
         'remote' => Catalog::REMOTE,
         'language' => Catalog::LANGUAGES,
+        'ats' => Catalog::ATS,
     ];
 
     private const DATES = ['added_at', 'published_at', 'applied_at', 'follow_up_at'];
@@ -215,6 +222,11 @@ class RegistryImporter
                 $digits = preg_replace('/\D/', '', $data[$attribute]);
                 $data[$attribute] = $digits === '' ? null : (int) $digits;
             }
+        }
+
+        if (filled($data['ats_score'] ?? null)) {
+            $digits = preg_replace('/[^\d]/', '', explode(',', str_replace('.', ',', $data['ats_score']))[0]);
+            $data['ats_score'] = $digits === '' ? null : min(100, (int) $digits);
         }
 
         if (filled($data['relevance'] ?? null)) {

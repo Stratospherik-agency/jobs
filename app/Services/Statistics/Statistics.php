@@ -118,6 +118,9 @@ class Statistics
             'remote' => ['label' => 'Télétravail', 'order' => array_values(Catalog::REMOTE)],
             'language' => ['label' => 'Langue de l\'annonce', 'order' => array_values(Catalog::LANGUAGES)],
             'location' => ['label' => 'Lieu'],
+            'ats' => ['label' => 'Passage par un ATS', 'order' => array_values(Catalog::ATS)],
+            'ats_system' => ['label' => 'Système ATS'],
+            'ats_score' => ['label' => 'Score ATS', 'order' => ['Moins de 60 %', '60 à 79 %', '80 % et plus']],
             'followed_up' => ['label' => 'Relance', 'order' => ['Relancée', 'Non relancée']],
             'responded' => ['label' => 'Réponse', 'order' => ['Réponse reçue', 'Sans réponse', 'Pas de candidature']],
             'response_type' => ['label' => 'Type de réponse', 'order' => array_values(Catalog::RESPONSE_TYPES)],
@@ -146,6 +149,9 @@ class Statistics
             'language' => Catalog::LANGUAGES[$o->language] ?? self::NONE,
             'worktime' => $o->rate_max === null ? self::NONE : ($o->rate_max >= 90 ? 'Temps plein (90 % et plus)' : 'Temps partiel'),
             'location' => filled($o->location) ? trim($o->location) : self::NONE,
+            'ats' => Catalog::ATS[$o->ats] ?? self::NONE,
+            'ats_system' => filled($o->ats_system) ? trim($o->ats_system) : self::NONE,
+            'ats_score' => Catalog::atsScoreBand($o->ats_score) ?? self::NONE,
             'followed_up' => $o->followed_up_at || $o->status === OpportunityStatus::FollowedUp ? 'Relancée' : 'Non relancée',
             'responded' => ! self::applied($o) ? 'Pas de candidature' : (self::responded($o) ? 'Réponse reçue' : 'Sans réponse'),
             'response_type' => Catalog::RESPONSE_TYPES[$o->response_type] ?? ($o->status === OpportunityStatus::Rejected ? Catalog::RESPONSE_TYPES['refus'] : (self::responded($o) ? Catalog::RESPONSE_TYPES['positive'] : self::NONE)),
@@ -201,6 +207,7 @@ class Statistics
             'interview_rate' => ['label' => 'Taux d\'entretien', 'format' => 'percent', 'base' => 'candidatures'],
             'response_delay' => ['label' => 'Délai moyen de réponse', 'format' => 'days', 'base' => 'réponses'],
             'relevance' => ['label' => 'Pertinence moyenne', 'format' => 'score', 'base' => 'offres notées'],
+            'ats_score' => ['label' => 'Score ATS moyen', 'format' => 'percent', 'base' => 'candidatures notées'],
         ];
     }
 
@@ -230,6 +237,10 @@ class Statistics
                 $days = $group->map(fn ($o) => self::responseDays($o))->filter(fn ($d) => $d !== null);
 
                 return ['value' => $days->isEmpty() ? null : round($days->avg(), 1), 'n' => $days->count(), 'detail' => 'sur '.$days->count().' réponse(s)'];
+            case 'ats_score':
+                $scores = $group->filter(fn ($o) => self::applied($o))->pluck('ats_score')->filter(fn ($s) => $s !== null);
+
+                return ['value' => $scores->isEmpty() ? null : round($scores->avg(), 1), 'n' => $scores->count(), 'detail' => 'sur '.$scores->count().' candidature(s) notée(s)'];
             case 'relevance':
                 $scores = $group->pluck('relevance')->filter();
 

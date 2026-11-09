@@ -44,6 +44,12 @@ class ProspectImporter
         'recontact' => 'recontact_at',
         'documents' => 'documents',
         'notes' => 'notes',
+        'ats' => 'ats',
+        'système ats' => 'ats_system',
+        'outil ats' => 'ats_system',
+        'score ats (%)' => 'ats_score',
+        'score ats' => 'ats_score',
+        'mots-clés manquants' => 'ats_missing_keywords',
     ];
 
     private const CHOICES = [
@@ -51,6 +57,7 @@ class ProspectImporter
         'channel' => Catalog::PROSPECT_CHANNELS,
         'response_type' => Catalog::PROSPECT_RESPONSES,
         'language' => Catalog::LANGUAGES,
+        'ats' => Catalog::ATS,
     ];
 
     private const DATES = ['added_at', 'signal_date', 'sent_at', 'follow_up_at', 'response_at', 'recontact_at'];
@@ -135,6 +142,11 @@ class ProspectImporter
             if (filled($data[$attribute] ?? null)) {
                 $data[$attribute] = Catalog::keyFor($options, $data[$attribute]);
             }
+        }
+
+        if (filled($data['ats_score'] ?? null)) {
+            $digits = preg_replace('/[^\d]/', '', explode(',', str_replace('.', ',', $data['ats_score']))[0]);
+            $data['ats_score'] = $digits === '' ? null : min(100, (int) $digits);
         }
 
         if (filled($data['relevance'] ?? null)) {

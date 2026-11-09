@@ -31,6 +31,7 @@ class Prospect extends Model
         'signal_source', 'reasons', 'contributions', 'contact_name', 'contact_role', 'contact_email',
         'contact_linkedin', 'channel', 'relevance', 'language', 'status', 'sent_at', 'follow_up_at',
         'followed_up_at', 'response_at', 'response_type', 'recontact_at', 'documents', 'notes',
+        'ats', 'ats_system', 'ats_score', 'ats_missing_keywords',
     ];
 
     protected $attributes = [
@@ -49,6 +50,7 @@ class Prospect extends Model
             'response_at' => 'date',
             'recontact_at' => 'date',
             'relevance' => 'integer',
+            'ats_score' => 'integer',
             'registry_snapshot' => 'array',
         ];
     }

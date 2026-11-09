@@ -54,7 +54,7 @@ return [
         'registry_spreadsheet_id' => env('GOOGLE_REGISTRY_SHEET_ID', '1hJl9PTZBWSL_U-Oo1oTvv9NdSqzbTNYMGmwcI5dW_Ac'),
         'registry_range' => env('GOOGLE_REGISTRY_RANGE', 'Offres!A1:Z1000'),
         // Onglet des candidatures spontanées (facultatif : ignoré s'il n'existe pas).
-        'prospects_range' => env('GOOGLE_PROSPECTS_RANGE', 'Spontanées!A1:AA1000'),
+        'prospects_range' => env('GOOGLE_PROSPECTS_RANGE', 'Spontanées!A1:AE1000'),
         'drive_root_folder' => env('GOOGLE_DRIVE_FOLDER', 'Candidatures'),
     ],
 

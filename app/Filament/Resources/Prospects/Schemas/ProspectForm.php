@@ -55,6 +55,10 @@ class ProspectForm
                         TextInput::make('contact_email')->label('E-mail')->email(),
                         TextInput::make('contact_linkedin')->label('LinkedIn')->url()->maxLength(500),
                         Select::make('channel')->label('Canal')->options(Catalog::PROSPECT_CHANNELS),
+                        Select::make('ats')->label('Passe par un ATS')->options(Catalog::ATS),
+                        TextInput::make('ats_system')->label('Système ATS')->datalist(Catalog::ATS_SYSTEMS),
+                        TextInput::make('ats_score')->label('Score ATS (%)')->integer()->minValue(0)->maxValue(100),
+                        Textarea::make('ats_missing_keywords')->label('Mots-clés manquants')->rows(2)->columnSpanFull(),
                     ]),
                 Section::make('Suivi')
                     ->columns(3)
