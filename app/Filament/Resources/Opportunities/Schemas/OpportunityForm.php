@@ -40,6 +40,11 @@ class OpportunityForm
                             ->url()
                             ->maxLength(2048)
                             ->columnSpanFull(),
+                        TextInput::make('contact_email')
+                            ->label('Adresse de candidature')
+                            ->email()
+                            ->helperText('Si l\'annonce demande un envoi par e-mail : la candidature préparée d\'office l\'utilisera.')
+                            ->columnSpanFull(),
                         Textarea::make('notes')->label('Notes')->rows(4)->columnSpanFull(),
                     ]),
                 Section::make('Caractéristiques')

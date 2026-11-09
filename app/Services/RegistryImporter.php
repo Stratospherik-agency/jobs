@@ -56,6 +56,9 @@ class RegistryImporter
         "message d'accompagnement" => 'message_body',
         'pdf (liens canva)' => 'documents_links',
         'pdf' => 'documents_links',
+        'e-mail de contact' => 'contact_email',
+        'e-mail de candidature' => 'contact_email',
+        'adresse de candidature' => 'contact_email',
     ];
 
     /** Colonnes à liste fermée : libellé du registre → clé. */
@@ -232,6 +235,11 @@ class RegistryImporter
 
         if (filled($data['documents_url'] ?? null) && ! preg_match('#^https://#i', $data['documents_url'])) {
             $data['documents_url'] = null; // n'accepter qu'un lien web sécurisé
+        }
+
+        if (array_key_exists('contact_email', $data)) {
+            $email = trim(preg_replace('/^mailto:/i', '', (string) $data['contact_email']));
+            $data['contact_email'] = filter_var($email, FILTER_VALIDATE_EMAIL) ? mb_strtolower($email) : null;
         }
 
         if (filled($data['ats_score'] ?? null)) {

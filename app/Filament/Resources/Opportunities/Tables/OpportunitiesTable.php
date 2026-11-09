@@ -30,7 +30,7 @@ class OpportunitiesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort(fn (Builder $query) => $query->orderByDesc('relevance')->orderByDesc('added_at'))
+            ->defaultSort(fn (Builder $query) => $query->orderByDesc('relevance_score')->orderByDesc('relevance')->orderByDesc('added_at'))
             ->columns([
                 TextColumn::make('company')
                     ->label('Entreprise')
@@ -46,6 +46,16 @@ class OpportunitiesTable
                     ->color(fn (?int $state) => match ($state) {
                         3 => 'success', 2 => 'info', default => 'gray'
                     })
+                    ->sortable(),
+                TextColumn::make('relevance_score')
+                    ->label('Score')
+                    ->suffix(' / 100')
+                    ->badge()
+                    ->color(fn (?int $state) => match (true) {
+                        $state === null => 'gray', $state >= 75 => 'success', $state >= 50 => 'info', default => 'gray',
+                    })
+                    ->tooltip(fn (Opportunity $record) => implode("\n", $record->relevance_reasons ?? []))
+                    ->placeholder('—')
                     ->sortable(),
                 TextColumn::make('status')->label('Statut')->badge()->sortable(),
                 TextColumn::make('application.status')->label('Dossier')->badge()->placeholder('—')->toggleable(),

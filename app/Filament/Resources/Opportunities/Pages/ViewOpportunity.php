@@ -8,9 +8,11 @@ use App\Filament\Resources\Opportunities\Actions\OpportunityActions;
 use App\Filament\Resources\Opportunities\OpportunityResource;
 use App\Filament\Resources\Opportunities\Widgets\Correspondence;
 use App\Models\Opportunity;
+use App\Services\Automation\InterviewPrep;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewOpportunity extends ViewRecord
@@ -47,6 +49,16 @@ class ViewOpportunity extends ViewRecord
                 ->icon('heroicon-o-envelope')
                 ->color('gray')
                 ->button(),
+            Action::make('interview_prep')
+                ->label(fn (Opportunity $record) => $record->interview_prep ? 'Refaire la fiche d\'entretien' : 'Préparer l\'entretien')
+                ->icon('heroicon-o-academic-cap')
+                ->color('gray')
+                ->visible(fn (Opportunity $record) => in_array($record->status, [OpportunityStatus::Interview, OpportunityStatus::OfferReceived], true) || filled($record->interview_prep))
+                ->action(function (Opportunity $record) {
+                    InterviewPrep::prepare($record, notify: false);
+                    Notification::make()->title('Fiche d\'entretien prête')->success()->send();
+                    $this->redirect(OpportunityResource::getUrl('view', ['record' => $record]), navigate: true);
+                }),
             Action::make('open_offer')
                 ->label('Voir l\'offre')
                 ->icon('heroicon-o-arrow-top-right-on-square')

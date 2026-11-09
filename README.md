@@ -25,6 +25,11 @@ Pile : Laravel 13, Filament 5, PHP 8.3, MySQL/MariaDB, hébergement Infomaniak.
   modifiés dans le registre depuis la synchronisation précédente sont reportés, sans écraser le suivi fait ici.
 - **Réglages** : identifiants Google (code secret chiffré, jamais réaffiché), registre et dossier Drive,
   délai de relance, signature des candidatures, alertes de connexion. Les réglages priment sur le `.env`.
+- **Automatisations et notifications** : score de pertinence sur 100, candidature préparée d'office,
+  relances en brouillon Gmail, suivi des réponses (libellé « Jobs »), fiche de préparation d'entretien,
+  veille des entreprises cibles, résumé du matin et bilan hebdomadaire. Notifications par e-mail et/ou dans
+  la web app, réglables par type (heure, intervalle en jours). Rien ne part sans validation.
+  Voir [docs/automatisations.md](docs/automatisations.md).
 - **Correspondance** : les échanges Gmail avec le domaine de l'entreprise s'affichent sur la fiche.
 - **Compte Google** : connexion OAuth limitée à Gmail et aux fichiers Drive créés par l'application,
   réservée au compte du propriétaire, avec lecture seule de Google Sheets ; jetons chiffrés en base. Mise en place : [docs/google-cloud.md](docs/google-cloud.md).

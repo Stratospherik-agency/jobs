@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use App\Enums\OpportunityStatus;
+use App\Filament\Resources\Opportunities\OpportunityResource;
+use App\Services\Automation\InterviewPrep;
+use App\Services\Automation\NotificationCenter;
+use App\Services\Automation\RelevanceScorer;
 use App\Support\Catalog;
 use Database\Factories\OpportunityFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,6 +34,14 @@ class Opportunity extends Model
         'followed_up_at', 'first_response_at', 'response_type', 'refusal_reason', 'interview_at',
         'ats', 'ats_system', 'ats_score', 'ats_missing_keywords',
         'documents_url', 'cover_letter_text', 'message_subject', 'message_body', 'documents_links',
+        'contact_email', 'relevance_score', 'relevance_reasons', 'follow_up_draft_id', 'follow_up_drafted_at',
+        'reminder_sent_at', 'interview_prep', 'interview_prep_at',
+    ];
+
+    /** Champs qui influencent le score de pertinence. */
+    private const SCORED = [
+        'company', 'title', 'job_family', 'location', 'company_address', 'rate', 'remote', 'sector',
+        'seniority', 'contract_type', 'ats_score',
     ];
 
     protected $attributes = [
@@ -54,6 +66,11 @@ class Opportunity extends Model
             'salary_min' => 'integer',
             'salary_max' => 'integer',
             'ats_score' => 'integer',
+            'relevance_score' => 'integer',
+            'relevance_reasons' => 'array',
+            'follow_up_drafted_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
+            'interview_prep_at' => 'datetime',
         ];
     }
 
@@ -110,6 +127,18 @@ class Opportunity extends Model
             if ($opportunity->status?->isClosed()) {
                 $opportunity->follow_up_at = null;
             }
+
+            // Nouvelle date de relance : un nouveau brouillon et un nouveau rappel seront proposés.
+            if ($opportunity->exists && $opportunity->isDirty('follow_up_at')) {
+                $opportunity->follow_up_draft_id = null;
+                $opportunity->follow_up_drafted_at = null;
+                $opportunity->reminder_sent_at = null;
+            }
+
+            // Score de pertinence sur 100, recalculé quand un critère change.
+            if ($opportunity->relevance_score === null || $opportunity->isDirty(self::SCORED)) {
+                RelevanceScorer::refresh($opportunity);
+            }
         });
 
         // Supprime aussi les pièces jointes stockées sur le serveur.
@@ -124,6 +153,19 @@ class Opportunity extends Model
                 'body' => 'Opportunité ajoutée',
                 'happened_at' => now(),
             ]);
+
+            if ($opportunity->status === OpportunityStatus::Interview) {
+                rescue(fn () => InterviewPrep::prepare($opportunity), report: true);
+            }
+
+            if ($opportunity->isTopMatch() && ! $opportunity->status->isClosed()) {
+                rescue(fn () => NotificationCenter::notify(
+                    'offre_pertinente',
+                    "Offre très pertinente : {$opportunity->company}",
+                    "{$opportunity->title} – score {$opportunity->relevance_score}/100.",
+                    ['Ouvrir la fiche' => OpportunityResource::getUrl('view', ['record' => $opportunity])],
+                ), report: true);
+            }
         });
 
         static::updated(function (Opportunity $opportunity) {
@@ -138,8 +180,31 @@ class Opportunity extends Model
 
                 // Candidature spontanée : la cible suit l'avancement.
                 Prospect::mirror($opportunity);
+
+                // Annonce ignorée : le score des autres offres en tient compte.
+                if ($opportunity->status === OpportunityStatus::Discarded) {
+                    RelevanceScorer::forget();
+                }
+
+                // Entretien fixé : fiche de préparation et notification.
+                if ($opportunity->status === OpportunityStatus::Interview && blank($opportunity->interview_prep)) {
+                    rescue(fn () => InterviewPrep::prepare($opportunity), report: true);
+                }
             }
         });
+    }
+
+    /** Offre assez pertinente pour que sa candidature soit préparée d'office. */
+    public function isTopMatch(): bool
+    {
+        return ($this->relevance_score !== null && $this->relevance_score >= (int) config('dashboard.auto_prepare_min_score', 75))
+            || (config('dashboard.auto_prepare_top_rated', true) && $this->relevance === 3);
+    }
+
+    /** Offre ou candidature spontanée liée. */
+    public function isSpontaneous(): bool
+    {
+        return $this->prospect()->exists();
     }
 
     public function application(): HasOne

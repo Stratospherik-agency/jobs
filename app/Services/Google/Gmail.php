@@ -113,6 +113,114 @@ class Gmail
         ];
     }
 
+    /**
+     * Crée un brouillon (jamais envoyé), dans le fil d'origine si on le connaît.
+     */
+    public function createDraft(string $mime, ?string $threadId = null): string
+    {
+        $message = ['raw' => self::b64url($mime)];
+        if ($threadId) {
+            $message['threadId'] = $threadId;
+        }
+
+        return (string) GoogleClient::check(
+            $this->google->api()->post(GoogleClient::GMAIL.'/drafts', ['message' => $message]),
+            'Création du brouillon impossible'
+        )->json('id');
+    }
+
+    public function draftExists(string $id): bool
+    {
+        return $this->google->api()->get(GoogleClient::GMAIL.'/drafts/'.$id, ['format' => 'minimal'])->successful();
+    }
+
+    /**
+     * Identifiants des messages qui répondent à une recherche Gmail (ex. « label:Jobs newer_than:7d »).
+     *
+     * @return list<string>
+     */
+    public function search(string $query, int $max = 50): array
+    {
+        $messages = GoogleClient::check(
+            $this->google->api()->get(GoogleClient::GMAIL.'/messages', ['q' => $query, 'maxResults' => $max]),
+            'Recherche Gmail impossible'
+        )->json('messages') ?? [];
+
+        return array_values(array_map(fn ($m) => (string) $m['id'], $messages));
+    }
+
+    /**
+     * Messages d'un fil (en-têtes, extrait et libellés).
+     *
+     * @return list<array{id: string, threadId: string, from: string, to: string, subject: string, snippet: string, text: string, labels: list<string>, date: ?Carbon}>
+     */
+    public function thread(string $threadId): array
+    {
+        $thread = $this->google->api()->get(GoogleClient::GMAIL.'/threads/'.$threadId, ['format' => 'full']);
+
+        if (! $thread->successful()) {
+            return [];
+        }
+
+        return array_map(fn ($m) => $this->summarize($m), $thread->json('messages') ?? []);
+    }
+
+    /**
+     * Un message : en-têtes, extrait, début du texte et libellés.
+     *
+     * @return array{id: string, threadId: string, from: string, to: string, subject: string, snippet: string, text: string, labels: list<string>, date: ?Carbon}|null
+     */
+    public function message(string $id): ?array
+    {
+        $response = $this->google->api()->get(GoogleClient::GMAIL.'/messages/'.$id, ['format' => 'full']);
+
+        return $response->successful() ? $this->summarize($response->json()) : null;
+    }
+
+    /**
+     * @return array{id: string, threadId: string, from: string, to: string, subject: string, snippet: string, text: string, labels: list<string>, date: ?Carbon}
+     */
+    private function summarize(array $message): array
+    {
+        $headers = $this->headers($message['payload']['headers'] ?? []);
+        $text = null;
+        $html = null;
+
+        $this->walk($message['payload'] ?? [], function (array $part) use (&$text, &$html) {
+            if (($part['filename'] ?? '') !== '') {
+                return;
+            }
+            $mime = $part['mimeType'] ?? '';
+            if ($mime === 'text/plain' && $text === null) {
+                $text = self::unb64url((string) ($part['body']['data'] ?? ''));
+            } elseif ($mime === 'text/html' && $html === null) {
+                $html = self::unb64url((string) ($part['body']['data'] ?? ''));
+            }
+        });
+
+        if ($text === null && $html !== null) {
+            $text = html_entity_decode(strip_tags(preg_replace('#<br\s*/?>|</p>|</div>#i', "\n", $html)), ENT_QUOTES);
+        }
+
+        return [
+            'id' => (string) $message['id'],
+            'threadId' => (string) ($message['threadId'] ?? ''),
+            'from' => $headers['from'] ?? '',
+            'to' => $headers['to'] ?? '',
+            'subject' => $headers['subject'] ?? '',
+            'snippet' => html_entity_decode((string) ($message['snippet'] ?? ''), ENT_QUOTES),
+            'text' => mb_substr(trim((string) $text), 0, 5000),
+            'labels' => array_values($message['labelIds'] ?? []),
+            'date' => isset($message['internalDate']) ? Carbon::createFromTimestampMs((int) $message['internalDate'])->timezone(config('app.timezone')) : null,
+        ];
+    }
+
+    /** Adresse e-mail seule, depuis un en-tête « Nom <adresse> ». */
+    public static function address(string $header): string
+    {
+        return mb_strtolower(preg_match('/<([^>]+)>/', $header, $m) ? trim($m[1]) : trim($header));
+    }
+
     public function deleteDraft(string $id): void
     {
         rescue(fn () => $this->google->api()->delete(GoogleClient::GMAIL.'/drafts/'.$id), report: false);

@@ -21,3 +21,7 @@ Schedule::command('registre:synchroniser')->everyFifteenMinutes()->withoutOverla
 
 // Candidatures spontanées : sans réponse 3 semaines après la relance, refus à recontacter après 6 mois.
 Schedule::call(fn () => Prospect::housekeeping())->dailyAt('06:00')->name('candidatures-spontanees');
+
+// Automatisations : préparation d'office, relances (brouillons), réponses, veille, résumé du matin, bilan.
+// Chaque tâche vérifie elle-même son heure et son intervalle (Réglages > Notifications).
+Schedule::command('automatisations:executer')->everyFiveMinutes()->withoutOverlapping(30);
