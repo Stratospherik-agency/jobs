@@ -14,7 +14,7 @@ class Application extends Model
 {
     protected $fillable = [
         'status', 'to_email', 'cc', 'subject', 'body', 'source_draft_id', 'validated_at', 'sent_at',
-        'gmail_message_id', 'gmail_thread_id', 'drive_folder_url', 'last_error',
+        'gmail_message_id', 'gmail_thread_id', 'drive_folder_url', 'last_error', 'auto_prepared_at', 'ready_notified_at',
     ];
 
     protected $attributes = [
@@ -27,6 +27,8 @@ class Application extends Model
             'status' => ApplicationStatus::class,
             'validated_at' => 'datetime',
             'sent_at' => 'datetime',
+            'auto_prepared_at' => 'datetime',
+            'ready_notified_at' => 'datetime',
         ];
     }
 

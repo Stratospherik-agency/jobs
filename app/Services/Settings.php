@@ -23,6 +23,16 @@ class Settings
         'follow_up_days' => 'dashboard.follow_up_days',
         'signature' => 'dashboard.signature',
         'login_alerts' => 'dashboard.login_alerts',
+        'reminder_days' => 'dashboard.reminder_days',
+        'auto_prepare' => 'dashboard.auto_prepare',
+        'auto_prepare_min_score' => 'dashboard.auto_prepare_min_score',
+        'auto_prepare_top_rated' => 'dashboard.auto_prepare_top_rated',
+        'follow_up_drafts' => 'dashboard.follow_up_drafts',
+        'follow_up_template' => 'dashboard.follow_up_template',
+        'response_auto_status' => 'dashboard.response_auto_status',
+        'gmail_label' => 'dashboard.gmail_label',
+        'proof_bank' => 'dashboard.proof_bank',
+        'notifications' => 'dashboard.notifications',
     ];
 
     /** Réglages jamais renvoyés vers le navigateur. */
@@ -31,6 +41,13 @@ class Settings
     private const CASTS = [
         'follow_up_days' => 'int',
         'login_alerts' => 'bool',
+        'reminder_days' => 'int',
+        'auto_prepare' => 'bool',
+        'auto_prepare_min_score' => 'int',
+        'auto_prepare_top_rated' => 'bool',
+        'follow_up_drafts' => 'bool',
+        'response_auto_status' => 'bool',
+        'notifications' => 'json',
     ];
 
     /**
@@ -89,6 +106,10 @@ class Settings
                 $value = $value ? '1' : '0';
             }
 
+            if (is_array($value)) {
+                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+            }
+
             $value = $value === null ? '' : trim((string) $value);
 
             if ($value === '') {
@@ -132,6 +153,7 @@ class Settings
         return match (self::CASTS[$key] ?? null) {
             'int' => (int) $value,
             'bool' => $value === '1',
+            'json' => is_array($decoded = json_decode($value, true)) ? $decoded : [],
             default => $value,
         };
     }

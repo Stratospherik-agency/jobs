@@ -2,13 +2,19 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\AutomationRun;
 use App\Models\GoogleConnection;
+use App\Services\Automation\AutoPreparer;
+use App\Services\Automation\FollowUps;
+use App\Services\Automation\NotificationCenter;
 use App\Services\Settings as SettingsStore;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -21,6 +27,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use UnitEnum;
@@ -57,7 +64,76 @@ class Settings extends Page
             'follow_up_days' => SettingsStore::get('follow_up_days'),
             'signature' => SettingsStore::get('signature'),
             'login_alerts' => (bool) SettingsStore::get('login_alerts'),
+            'reminder_days' => SettingsStore::get('reminder_days'),
+            'follow_up_drafts' => (bool) SettingsStore::get('follow_up_drafts'),
+            'follow_up_template' => SettingsStore::get('follow_up_template') ?: FollowUps::DEFAULT_TEMPLATE,
+            'auto_prepare' => (bool) SettingsStore::get('auto_prepare'),
+            'auto_prepare_min_score' => SettingsStore::get('auto_prepare_min_score'),
+            'auto_prepare_top_rated' => (bool) SettingsStore::get('auto_prepare_top_rated'),
+            'response_auto_status' => (bool) SettingsStore::get('response_auto_status'),
+            'gmail_label' => SettingsStore::get('gmail_label'),
+            'proof_bank' => SettingsStore::get('proof_bank'),
+            'notifications' => collect(NotificationCenter::types())->mapWithKeys(fn ($d, $type) => [
+                $type => Arr::only(NotificationCenter::preferences($type), ['mail', 'app', 'ios', 'every_days', 'time', 'weekday']),
+            ])->all(),
         ]);
+    }
+
+    /**
+     * Une section par type de notification : canaux activables et, selon le type, heure,
+     * intervalle en jours et jour de la semaine.
+     *
+     * @return list<Section>
+     */
+    private function notificationSections(): array
+    {
+        $sections = [];
+
+        foreach (NotificationCenter::types() as $type => $definition) {
+            $path = 'notifications.'.$type.'.';
+            $fields = [
+                Toggle::make($path.'mail')->label('Par e-mail')->inline(false),
+                Toggle::make($path.'app')->label('Dans la web app')->inline(false)->helperText('Cloche en haut à droite.'),
+                Toggle::make($path.'ios')->label('App iOS')->inline(false)->disabled()->dehydrated()
+                    ->helperText('Bientôt : l\'app iPhone reprendra ces réglages.'),
+            ];
+
+            if (isset($definition['every_days'])) {
+                $fields[] = TextInput::make($path.'every_days')
+                    ->label('Tous les … jours')
+                    ->integer()->minValue(1)->maxValue(60)->required()
+                    ->suffix('jour(s)');
+            }
+            if (isset($definition['time'])) {
+                $fields[] = TimePicker::make($path.'time')
+                    ->label($type === 'relance' ? 'Heure de préparation des relances' : 'Heure d\'envoi')
+                    ->seconds(false)->format('H:i')->required();
+            }
+            if (isset($definition['weekday'])) {
+                $fields[] = Select::make($path.'weekday')
+                    ->label('Jour')
+                    ->options(NotificationCenter::WEEKDAYS)
+                    ->required()
+                    ->helperText('Utilisé quand l\'intervalle est un multiple de 7 jours.');
+            }
+            if ($type === 'relance') {
+                $fields[] = TextInput::make('follow_up_days')
+                    ->label('Première relance après')
+                    ->integer()->minValue(1)->maxValue(60)->required()->suffix('jours');
+                $fields[] = TextInput::make('reminder_days')
+                    ->label('Rappel « toujours sans réponse » après')
+                    ->integer()->minValue(1)->maxValue(90)->required()->suffix('jours');
+            }
+
+            $sections[] = Section::make($definition['label'])
+                ->description($definition['description'])
+                ->icon($definition['icon'])
+                ->columns(['default' => 1, 'sm' => 3])
+                ->compact()
+                ->schema($fields);
+        }
+
+        return $sections;
     }
 
     public function form(Schema $schema): Schema
@@ -115,16 +191,59 @@ class Settings extends Page
                                     ])
                                     ->columns(1),
                             ]),
+                        Tab::make('Notifications')
+                            ->icon('heroicon-o-bell')
+                            ->schema([
+                                Text::make('Choisis pour chaque type comment être prévenu, à quelle heure et tous les combien de jours. Rien n\'est jamais envoyé à un recruteur sans ta validation.'),
+                                ...$this->notificationSections(),
+                            ]),
+                        Tab::make('Automatisations')
+                            ->icon('heroicon-o-bolt')
+                            ->schema([
+                                Section::make('Candidature préparée d\'office')
+                                    ->description('Quand une offre très pertinente a ses documents (lettre, message, PDF), la candidature est remplie et attend ta validation.')
+                                    ->columns(['default' => 1, 'sm' => 3])
+                                    ->schema([
+                                        Toggle::make('auto_prepare')->label('Activer')->inline(false),
+                                        TextInput::make('auto_prepare_min_score')
+                                            ->label('À partir du score')
+                                            ->integer()->minValue(0)->maxValue(100)->required()->suffix('/ 100'),
+                                        Toggle::make('auto_prepare_top_rated')->label('Aussi les offres notées 3/3')->inline(false),
+                                    ]),
+                                Section::make('Relances')
+                                    ->description('Le brouillon est créé dans Gmail, dans le fil de la candidature. Tu le relis et l\'envoies toi-même.')
+                                    ->schema([
+                                        Toggle::make('follow_up_drafts')->label('Créer le brouillon de relance dans Gmail'),
+                                        Textarea::make('follow_up_template')
+                                            ->label('Modèle de relance')
+                                            ->helperText('Repères remplacés automatiquement : {poste}, {entreprise}, {date_envoi}, {signature}.')
+                                            ->rows(9)
+                                            ->maxLength(4000),
+                                    ]),
+                                Section::make('Suivi des réponses et veille')
+                                    ->description('Seul le libellé Gmail indiqué est lu, plus les fils des candidatures envoyées depuis le tableau de bord.')
+                                    ->columns(['default' => 1, 'sm' => 2])
+                                    ->schema([
+                                        TextInput::make('gmail_label')->label('Libellé Gmail lu')->required()->maxLength(100),
+                                        Toggle::make('response_auto_status')
+                                            ->label('Mettre à jour le statut tout seul')
+                                            ->helperText('Refus ou invitation à un entretien détectés : le statut change, et l\'historique le note.')
+                                            ->inline(false),
+                                    ]),
+                                Section::make('Banque de preuves')
+                                    ->description('Utilisée par les fiches de préparation d\'entretien. Colle le tableau de ta banque de preuves (| # | Preuve FR | Preuve EN | Mots-clés | Force |) ou une liste « - preuve (mots-clés : …) ».')
+                                    ->collapsible()
+                                    ->schema([
+                                        Textarea::make('proof_bank')->hiddenLabel()->rows(12)->maxLength(30000),
+                                    ]),
+                                Section::make('Dernières exécutions')
+                                    ->collapsible()
+                                    ->collapsed()
+                                    ->schema([Text::make(fn () => new HtmlString(self::runsHtml()))]),
+                            ]),
                         Tab::make('Candidatures')
                             ->icon('heroicon-o-envelope')
                             ->schema([
-                                TextInput::make('follow_up_days')
-                                    ->label('Relance après (jours)')
-                                    ->helperText('Délai entre l\'envoi d\'une candidature et la relance proposée.')
-                                    ->integer()
-                                    ->minValue(1)
-                                    ->maxValue(60)
-                                    ->required(),
                                 Textarea::make('signature')
                                     ->label('Signature')
                                     ->helperText('Ajoutée au message de chaque nouvelle candidature.')
@@ -145,7 +264,49 @@ class Settings extends Page
 
     protected function getHeaderActions(): array
     {
-        return [$this->guideAction()->name('guide_header')];
+        return [
+            Action::make('test_notification')
+                ->label('Tester les notifications')
+                ->icon('heroicon-o-bell-alert')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('Un message de test part vers ton adresse e-mail et dans la web app, pour vérifier que tout arrive bien.')
+                ->action(function () {
+                    $channels = NotificationCenter::test();
+                    Notification::make()
+                        ->title($channels ? 'Test envoyé' : 'Aucun canal n\'a fonctionné')
+                        ->body($channels ? 'Envoyé : '.implode(' et ', $channels).'. Vérifie ta boîte mail et la cloche.' : 'Vérifie la configuration e-mail (MAIL_*) du serveur.')
+                        ->{$channels ? 'success' : 'danger'}()
+                        ->send();
+                }),
+            $this->guideAction()->name('guide_header'),
+        ];
+    }
+
+    /**
+     * Tableau des dernières exécutions des automatisations.
+     */
+    public static function runsHtml(): string
+    {
+        $labels = [
+            'scores' => 'Scores de pertinence', 'preparation' => 'Préparation d\'office', 'relances' => 'Relances',
+            'reponses' => 'Suivi des réponses', 'veille' => 'Veille', 'resume_matin' => 'Résumé du matin', 'bilan' => 'Bilan hebdomadaire',
+        ];
+        $runs = AutomationRun::query()->get()->keyBy('task');
+        $rows = '';
+
+        foreach ($labels as $task => $label) {
+            $run = $runs[$task] ?? null;
+            $error = $runs[$task.'_erreur'] ?? null;
+            $rows .= '<tr><td style="padding:.25rem .75rem .25rem 0"><strong>'.e($label).'</strong></td>'
+                .'<td style="padding:.25rem .75rem">'.e($run?->ran_at?->format('d.m.Y H:i') ?? 'jamais').'</td>'
+                .'<td style="padding:.25rem 0">'.e($run?->summary ?? '').(
+                    $error && (! $run || $error->ran_at->gt($run->ran_at)) ? ' <span style="color:#e11d48">Erreur : '.e($error->summary).'</span>' : ''
+                ).'</td></tr>';
+        }
+
+        return '<table style="font-size:.875rem">'.$rows.'</table>'
+            .'<p style="font-size:.8rem;opacity:.7;margin-top:.5rem">Les automatisations tournent toutes les 5 minutes grâce à la tâche planifiée (cron) du serveur.</p>';
     }
 
     /**
@@ -204,6 +365,25 @@ class Settings extends Page
 
         $data['google_registry_sheet_id'] = SettingsStore::spreadsheetId($data['google_registry_sheet_id'] ?? null);
 
+        // Préférences de notification : seulement les clés connues, heures au format HH:MM.
+        $data['notifications'] = collect($data['notifications'] ?? [])
+            ->only(array_keys(NotificationCenter::types()))
+            ->map(fn ($prefs) => array_filter([
+                'mail' => (bool) ($prefs['mail'] ?? false),
+                'app' => (bool) ($prefs['app'] ?? false),
+                'ios' => (bool) ($prefs['ios'] ?? false),
+                'every_days' => isset($prefs['every_days']) ? (int) $prefs['every_days'] : null,
+                'time' => isset($prefs['time']) ? substr((string) $prefs['time'], 0, 5) : null,
+                'weekday' => isset($prefs['weekday']) ? (int) $prefs['weekday'] : null,
+            ], fn ($v) => $v !== null))
+            ->all();
+
+        if (trim((string) ($data['follow_up_template'] ?? '')) === trim(FollowUps::DEFAULT_TEMPLATE)) {
+            $data['follow_up_template'] = null; // modèle par défaut : suit les améliorations futures
+        }
+
+        $previousScore = SettingsStore::get('auto_prepare_min_score');
+
         if (blank($data['google_client_secret'] ?? null)) {
             unset($data['google_client_secret']); // conserver le secret déjà enregistré
         }
@@ -219,5 +399,9 @@ class Settings extends Page
         $notification->send();
 
         $this->data['google_client_secret'] = null;
+
+        if ($previousScore !== SettingsStore::get('auto_prepare_min_score')) {
+            app(AutoPreparer::class)->run(); // nouveau seuil : préparer tout de suite les offres concernées
+        }
     }
 }

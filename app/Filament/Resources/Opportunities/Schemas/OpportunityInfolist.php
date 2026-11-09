@@ -10,6 +10,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Js;
+use Illuminate\Support\Str;
 
 class OpportunityInfolist
 {
@@ -34,13 +35,32 @@ class OpportunityInfolist
                             ->limit(80)
                             ->placeholder('—')
                             ->columnSpanFull(),
+                        TextEntry::make('contact_email')->label('Adresse de candidature')->copyable()->placeholder('—'),
                         TextEntry::make('notes')->label('Notes')->placeholder('—')->columnSpanFull(),
+                    ]),
+                Section::make('Préparation d\'entretien')
+                    ->icon('heroicon-o-academic-cap')
+                    ->description(fn (Opportunity $record) => 'Fiche créée le '.$record->interview_prep_at?->format('d.m.Y à H:i').'. Les preuves viennent de ta banque de preuves (Réglages > Automatisations).')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->visible(fn (Opportunity $record) => filled($record->interview_prep))
+                    ->schema([
+                        TextEntry::make('interview_prep')
+                            ->hiddenLabel()
+                            ->formatStateUsing(fn (?string $state) => new HtmlString('<div class="fi-prose">'.Str::markdown((string) $state, ['html_input' => 'escape', 'allow_unsafe_links' => false]).'</div>')),
                     ]),
                 Section::make('Suivi')
                     ->columnSpan(1)
                     ->schema([
                         TextEntry::make('status')->label('Statut')->badge(),
-                        TextEntry::make('relevance')->label('Pertinence')->formatStateUsing(fn ($state) => $state ? $state.' / 3' : null)->placeholder('—'),
+                        TextEntry::make('relevance_score')
+                            ->label('Score de pertinence')
+                            ->formatStateUsing(fn ($state) => $state.' / 100')
+                            ->badge()
+                            ->color(fn ($state) => $state >= 75 ? 'success' : ($state >= 50 ? 'info' : 'gray'))
+                            ->helperText(fn (Opportunity $record) => new HtmlString(collect($record->relevance_reasons ?? [])->map(fn ($r) => e($r))->implode('<br>')))
+                            ->placeholder('—'),
+                        TextEntry::make('relevance')->label('Note du registre')->formatStateUsing(fn ($state) => $state ? $state.' / 3' : null)->placeholder('—'),
                         TextEntry::make('applied_at')->label('Date de candidature')->date('d.m.Y')->placeholder('—'),
                         TextEntry::make('follow_up_at')
                             ->label('Relance prévue')

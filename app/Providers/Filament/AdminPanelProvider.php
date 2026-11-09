@@ -10,10 +10,10 @@ use App\Http\Controllers\OrpReportController;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
-use Filament\Navigation\NavigationGroup;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -78,6 +78,9 @@ class AdminPanelProvider extends PanelProvider
                 'warning' => Color::Amber,
                 'danger' => Color::Rose,
             ])
+            // Notifications de la web app (cloche) : candidatures prêtes, relances, réponses, veille…
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->sidebarWidth('17rem')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
