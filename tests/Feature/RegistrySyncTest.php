@@ -237,4 +237,25 @@ class RegistrySyncTest extends TestCase
         $owner->saveAppAuthenticationSecret('JBSWY3DPEHPK3PXP');
         $this->actingAs($owner)->get('/opportunites/'.$o->id)->assertOk()->assertSee('Je postule.')->assertSee('Copier');
     }
+
+    public function test_renamed_or_removed_canva_pdfs_follow_the_registry(): void
+    {
+        $this->connect();
+        $header = [...self::HEADER, 'PDF (liens Canva)'];
+        $this->fakeSheet();
+        $this->sheet = [$header, [...$this->row(), "CV-EN.pdf : https://export-download.canva.com/abc/cv.pdf\nCover-letter-EN.pdf : https://export-download.canva.com/abc/lettre.pdf"]];
+        app(RegistrySync::class)->sync();
+
+        $o = Opportunity::query()->firstWhere('company', 'Neural Concept');
+        $manual = $o->application->attachments()->create(['name' => 'Certificat.pdf', 'path' => 'candidatures/x.pdf', 'mime' => 'application/pdf', 'size' => 10]);
+
+        // Le CV garde son lien mais change de nom ; la lettre disparaît du registre.
+        $this->sheet = [$header, [...$this->row(), 'Neural-Concept_Technology-Marketing-Manager_CV_pierre-ollivier_tissier.pdf : https://export-download.canva.com/abc/cv.pdf']];
+        app(RegistrySync::class)->sync();
+
+        $names = $o->application->attachments()->orderBy('name')->pluck('name')->all();
+        $this->assertSame(['Certificat.pdf', 'Neural-Concept_Technology-Marketing-Manager_CV_pierre-ollivier_tissier.pdf'], $names);
+        $this->assertTrue($manual->fresh() !== null);
+        Http::assertSentCount(6); // 2 synchros × (Offres + Spontanées) + 2 téléchargements, pas de retéléchargement
+    }
 }
