@@ -20,7 +20,7 @@ class RegistrySync
     /** Délai minimal entre deux synchronisations automatiques (minutes). */
     public const STALE_AFTER = 5;
 
-    public function __construct(private RegistryImporter $importer, private Sheets $sheets, private ProspectImporter $prospects) {}
+    public function __construct(private RegistryImporter $importer, private Sheets $sheets, private ProspectImporter $prospects, private DocumentFetcher $documents) {}
 
     /**
      * Raison pour laquelle la synchronisation n'est pas possible, ou null si elle l'est.
@@ -70,6 +70,7 @@ class RegistrySync
             );
             $result = $this->importer->sync($values);
             $result['prospects'] = $this->syncProspects();
+            $result['documents'] = $this->documents->fetchAll();
 
             $connection->forceFill([
                 'registry_synced_at' => now(),
@@ -146,6 +147,13 @@ class RegistrySync
         if ($prospects = $result['prospects'] ?? null) {
             $summary .= " Candidatures spontanées : {$prospects['created']} ajoutée(s), {$prospects['updated']} mise(s) à jour.";
             $errors = [...$errors, ...$prospects['errors']];
+        }
+
+        if ($documents = $result['documents'] ?? null) {
+            if ($documents['imported']) {
+                $summary .= " {$documents['imported']} document(s) PDF récupéré(s).";
+            }
+            $errors = [...$errors, ...$documents['errors']];
         }
 
         if ($errors) {

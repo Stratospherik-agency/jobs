@@ -29,6 +29,7 @@ class Opportunity extends Model
         'rate_min', 'rate_max', 'remote', 'language', 'salary_min', 'salary_max',
         'followed_up_at', 'first_response_at', 'response_type', 'refusal_reason', 'interview_at',
         'ats', 'ats_system', 'ats_score', 'ats_missing_keywords',
+        'documents_url', 'cover_letter_text', 'message_subject', 'message_body', 'documents_links',
     ];
 
     protected $attributes = [

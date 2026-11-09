@@ -32,6 +32,7 @@ class Prospect extends Model
         'contact_linkedin', 'channel', 'relevance', 'language', 'status', 'sent_at', 'follow_up_at',
         'followed_up_at', 'response_at', 'response_type', 'recontact_at', 'documents', 'notes',
         'ats', 'ats_system', 'ats_score', 'ats_missing_keywords',
+        'documents_url', 'cover_letter_text', 'message_subject', 'message_body', 'documents_links',
     ];
 
     protected $attributes = [
@@ -57,6 +58,15 @@ class Prospect extends Model
 
     protected static function booted(): void
     {
+        // Documents et données ATS mis à jour dans le registre : la candidature liée suit.
+        static::saved(function (Prospect $prospect) {
+            $changed = array_intersect(self::SHARED_WITH_OPPORTUNITY, array_keys($prospect->getChanges()));
+
+            if ($changed && $prospect->opportunity) {
+                $prospect->opportunity->update($prospect->only($changed));
+            }
+        });
+
         static::saving(function (Prospect $prospect) {
             $prospect->added_at ??= today();
 
@@ -92,6 +102,12 @@ class Prospect extends Model
             }
         });
     }
+
+    /** Champs repris tels quels par la candidature liée. */
+    public const SHARED_WITH_OPPORTUNITY = [
+        'ats', 'ats_system', 'ats_score', 'ats_missing_keywords',
+        'documents_url', 'cover_letter_text', 'message_subject', 'message_body', 'documents_links',
+    ];
 
     public function opportunity(): BelongsTo
     {

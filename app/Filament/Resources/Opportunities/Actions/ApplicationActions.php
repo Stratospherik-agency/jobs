@@ -48,8 +48,8 @@ class ApplicationActions
             ->fillForm(fn (Opportunity $record) => [
                 'to_email' => $record->application?->to_email ?? $record->prospect?->contact_email,
                 'cc' => $record->application?->cc,
-                'subject' => $record->application?->subject ?? ($record->prospect ? 'Candidature spontanée' : 'Candidature – '.$record->title),
-                'body' => $record->application?->body ?? (filled(config('dashboard.signature')) ? "\n\n".config('dashboard.signature') : null),
+                'subject' => $record->application?->subject ?? $record->message_subject ?? ($record->prospect ? 'Candidature spontanée' : 'Candidature – '.$record->title),
+                'body' => $record->application?->body ?? $record->message_body ?? (filled(config('dashboard.signature')) ? "\n\n".config('dashboard.signature') : null),
                 'keep' => $record->application?->attachments->pluck('id')->map(fn ($id) => (string) $id)->all() ?? [],
             ])
             ->schema([
