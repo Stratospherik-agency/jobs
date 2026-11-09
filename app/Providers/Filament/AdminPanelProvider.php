@@ -119,6 +119,8 @@ class AdminPanelProvider extends PanelProvider
             ->authenticatedRoutes(function () {
                 Route::get('google/callback', GoogleCallbackController::class)->name('google.callback');
                 Route::get('pieces-jointes/{attachment}', AttachmentController::class)->name('attachments.download');
+                Route::get('pieces-jointes/{attachment}/pdf', [AttachmentController::class, 'inline'])->name('attachments.inline');
+                Route::get('pieces-jointes/{attachment}/consulter', [AttachmentController::class, 'viewer'])->name('attachments.view');
                 Route::get('statistiques/orp/{month}/csv', [OrpReportController::class, 'csv'])->where('month', '\d{4}-\d{2}')->name('orp.csv');
                 Route::get('statistiques/orp/{month}/imprimer', [OrpReportController::class, 'print'])->where('month', '\d{4}-\d{2}')->name('orp.print');
             })

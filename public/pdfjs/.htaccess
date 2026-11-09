@@ -1,0 +1,5 @@
+# Types MIME nécessaires aux modules JavaScript et au WebAssembly de PDF.js (Apache).
+AddType text/javascript .mjs
+AddType application/wasm .wasm
+AddType text/plain .ftl
+AddType application/octet-stream .bcmap

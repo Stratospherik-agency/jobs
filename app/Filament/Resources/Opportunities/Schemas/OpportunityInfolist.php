@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Opportunities\Schemas;
 
+use App\Http\Controllers\AttachmentController;
 use App\Filament\Resources\Opportunities\Actions\ApplicationActions;
 use App\Models\Opportunity;
 use Filament\Actions\Action;
@@ -103,8 +104,13 @@ class OpportunityInfolist
                             ->label('Pièces jointes')
                             ->state(fn (Opportunity $record) => $record->application?->attachments->isEmpty()
                                 ? null
-                                : new HtmlString($record->application->attachments->map(fn ($a) => '<a class="underline" href="'.e(route('filament.admin.attachments.download', $a)).'">'.e($a->name).'</a>'
-                                    .'&nbsp;<span style="opacity:.6">('.ApplicationActions::size($a->size).')</span>'
+                                : new HtmlString($record->application->attachments->map(fn ($a) => ($a->isPdf()
+                                    ? '<a class="underline" target="_blank" rel="noopener" title="Consulter en ligne" href="'.e(AttachmentController::viewerUrl($a)).'">'.e($a->name).'</a>'
+                                        .'&nbsp;<span style="opacity:.6">('.ApplicationActions::size($a->size).')</span>'
+                                        .'&nbsp;·&nbsp;<a class="underline" target="_blank" rel="noopener" href="'.e(AttachmentController::viewerUrl($a)).'">Consulter</a>'
+                                        .'&nbsp;·&nbsp;<a class="underline" href="'.e(route('filament.admin.attachments.download', $a)).'">Télécharger</a>'
+                                    : '<a class="underline" href="'.e(route('filament.admin.attachments.download', $a)).'">'.e($a->name).'</a>'
+                                        .'&nbsp;<span style="opacity:.6">('.ApplicationActions::size($a->size).')</span>')
                                     .($a->drive_file_url ? '&nbsp;·&nbsp;<a class="underline" target="_blank" rel="noopener" href="'.e($a->drive_file_url).'">Drive</a>' : ''))->implode('<br>')))
                             ->placeholder('Aucune')
                             ->columnSpan(2),
