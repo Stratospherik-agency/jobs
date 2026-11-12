@@ -2,6 +2,7 @@
 
 namespace App\Services\Automation;
 
+use App\Models\AutomationRun;
 use App\Models\User;
 use App\Notifications\OwnerAlert;
 use Filament\Actions\Action;
@@ -80,6 +81,12 @@ class NotificationCenter
                 'icon' => 'heroicon-o-eye',
                 'mail' => false, 'app' => true, 'ios' => false,
                 'every_days' => 1, 'time' => '06:30',
+            ],
+            'systeme' => [
+                'label' => 'Problème technique',
+                'description' => 'Une étape ne fonctionne plus : synchronisation du registre, compte Google, alertes Gmail absentes ou aucune nouvelle offre depuis 3 jours.',
+                'icon' => 'heroicon-o-exclamation-triangle',
+                'mail' => true, 'app' => true, 'ios' => false,
             ],
             'bilan' => [
                 'label' => 'Bilan hebdomadaire',
@@ -174,12 +181,39 @@ class NotificationCenter
             try {
                 $owner->notify(new OwnerAlert($mail ?? self::simpleMail($title, $body, $links)));
                 $sent[] = 'mail';
+                AutomationRun::mark('mail_ok', $title);
             } catch (Throwable $e) {
                 Log::warning('Notification par e-mail non envoyée', ['type' => $type, 'erreur' => $e->getMessage()]);
+                self::mailFailed($e);
             }
         }
 
         return $sent;
+    }
+
+    /**
+     * Un e-mail n'est pas parti : l'erreur est gardée pour l'encart « État du système »,
+     * et la web app prévient une fois par jour (l'e-mail ne peut pas le faire lui-même).
+     */
+    private static function mailFailed(Throwable $e): void
+    {
+        $error = mb_substr($e->getMessage(), 0, 500);
+        AutomationRun::mark('mail_erreur', $error);
+
+        $last = AutomationRun::lastRun('alerte_mail');
+        if ($last && $last->gt(now()->subDay())) {
+            return;
+        }
+        AutomationRun::mark('alerte_mail');
+
+        if ($owner = self::owner()) {
+            rescue(fn () => FilamentNotification::make()
+                ->title('Les e-mails du tableau de bord ne partent pas')
+                ->body('Erreur du serveur d\'e-mail : '.$error)
+                ->danger()
+                ->icon('heroicon-o-exclamation-triangle')
+                ->sendToDatabase($owner), report: false);
+        }
     }
 
     /**
@@ -206,8 +240,10 @@ class NotificationCenter
         try {
             $owner->notify(new OwnerAlert(self::simpleMail('Test de notification', 'Les e-mails du tableau de bord arrivent bien.')));
             $sent[] = 'e-mail';
+            AutomationRun::mark('mail_ok', 'Test de notification');
         } catch (Throwable $e) {
             Log::warning('Test e-mail en échec', ['erreur' => $e->getMessage()]);
+            self::mailFailed($e);
         }
 
         return $sent;

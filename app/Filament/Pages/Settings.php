@@ -274,9 +274,10 @@ class Settings extends Page
                 ->action(function () {
                     $channels = NotificationCenter::test();
                     Notification::make()
-                        ->title($channels ? 'Test envoyé' : 'Aucun canal n\'a fonctionné')
-                        ->body($channels ? 'Envoyé : '.implode(' et ', $channels).'. Vérifie ta boîte mail et la cloche.' : 'Vérifie la configuration e-mail (MAIL_*) du serveur.')
-                        ->{$channels ? 'success' : 'danger'}()
+                        ->title(in_array('e-mail', $channels, true) ? 'Test envoyé' : 'E-mail non envoyé')
+                        ->body((in_array('e-mail', $channels, true) ? 'Envoyé : '.implode(' et ', $channels).'. Vérifie ta boîte mail (et le dossier Spam) et la cloche.' : 'L\'e-mail n\'est pas parti : '.(AutomationRun::query()->where('task', 'mail_erreur')->value('summary') ?? 'erreur inconnue').'. Vérifie les lignes MAIL_… du fichier .env du serveur.'))
+                        ->{in_array('e-mail', $channels, true) ? 'success' : 'danger'}()
+                        ->persistent()
                         ->send();
                 }),
             $this->guideAction()->name('guide_header'),
@@ -290,7 +291,7 @@ class Settings extends Page
     {
         $labels = [
             'scores' => 'Scores de pertinence', 'preparation' => 'Préparation d\'office', 'relances' => 'Relances',
-            'reponses' => 'Suivi des réponses', 'veille' => 'Veille', 'resume_matin' => 'Résumé du matin', 'bilan' => 'Bilan hebdomadaire',
+            'reponses' => 'Suivi des réponses', 'veille' => 'Veille', 'resume_matin' => 'Résumé du matin', 'bilan' => 'Bilan hebdomadaire', 'sante' => 'Contrôle de l\'état du système',
         ];
         $runs = AutomationRun::query()->get()->keyBy('task');
         $rows = '';
