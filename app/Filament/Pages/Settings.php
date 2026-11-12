@@ -6,6 +6,7 @@ use App\Models\AutomationRun;
 use App\Models\GoogleConnection;
 use App\Services\Automation\AutoPreparer;
 use App\Services\Automation\FollowUps;
+use App\Services\Automation\HealthCheck;
 use App\Services\Automation\NotificationCenter;
 use App\Services\Settings as SettingsStore;
 use BackedEnum;
@@ -64,6 +65,15 @@ class Settings extends Page
             'follow_up_days' => SettingsStore::get('follow_up_days'),
             'signature' => SettingsStore::get('signature'),
             'login_alerts' => (bool) SettingsStore::get('login_alerts'),
+            // Infomaniak par défaut, tant que rien n'est enregistré ici.
+            'mail_host' => SettingsStore::isStored('mail_host') ? SettingsStore::get('mail_host') : 'mail.infomaniak.com',
+            'mail_port' => SettingsStore::isStored('mail_port') ? SettingsStore::get('mail_port') : 465,
+            'mail_scheme' => SettingsStore::isStored('mail_scheme') ? SettingsStore::get('mail_scheme') : 'smtps',
+            'mail_username' => SettingsStore::get('mail_username'),
+            'mail_password' => null,
+            'mail_from_address' => SettingsStore::get('mail_from_address'),
+            'mail_from_name' => SettingsStore::isStored('mail_from_name') ? SettingsStore::get('mail_from_name') : 'Tableau de bord jobs',
+            'notification_email' => SettingsStore::get('notification_email') ?: config('dashboard.owner_email'),
             'reminder_days' => SettingsStore::get('reminder_days'),
             'follow_up_drafts' => (bool) SettingsStore::get('follow_up_drafts'),
             'follow_up_template' => SettingsStore::get('follow_up_template') ?: FollowUps::DEFAULT_TEMPLATE,
@@ -250,6 +260,57 @@ class Settings extends Page
                                     ->rows(5)
                                     ->maxLength(2000),
                             ]),
+                        Tab::make('E-mails')
+                            ->icon('heroicon-o-at-symbol')
+                            ->schema([
+                                Text::make('Les résumés, alertes et relances te sont envoyés depuis une boîte e-mail Infomaniak. Indique ici son adresse et son mot de passe, puis clique sur « Enregistrer » et « Tester les notifications » en haut de la page.'),
+                                Section::make('Boîte d\'envoi')
+                                    ->description('Une adresse existante chez Infomaniak, par exemple une adresse de ton domaine. Le mot de passe est celui de cette boîte e-mail.')
+                                    ->columns(['default' => 1, 'sm' => 2])
+                                    ->schema([
+                                        TextInput::make('mail_username')
+                                            ->label('Adresse de la boîte d\'envoi')
+                                            ->email()
+                                            ->maxLength(255)
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn ($state, $set, $get) => blank($get('mail_from_address')) ? $set('mail_from_address', $state) : null),
+                                        TextInput::make('mail_password')
+                                            ->label('Mot de passe de cette boîte')
+                                            ->password()
+                                            ->revealable()
+                                            ->autocomplete('new-password')
+                                            ->maxLength(255)
+                                            ->placeholder(fn () => filled(SettingsStore::get('mail_password')) ? '•••••••• (enregistré : laisser vide pour le conserver)' : 'Coller le mot de passe ici')
+                                            ->helperText('Chiffré dans la base de données et jamais réaffiché.'),
+                                        TextInput::make('mail_from_address')
+                                            ->label('Adresse d\'expédition')
+                                            ->email()
+                                            ->maxLength(255)
+                                            ->helperText('En général la même que la boîte d\'envoi.'),
+                                        TextInput::make('mail_from_name')->label('Nom de l\'expéditeur')->maxLength(100),
+                                    ]),
+                                Section::make('Destinataire')
+                                    ->schema([
+                                        TextInput::make('notification_email')
+                                            ->label('Recevoir les e-mails du tableau de bord à')
+                                            ->email()
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->helperText('Ton adresse personnelle, par exemple ton Gmail. Ne change pas l\'adresse de connexion.'),
+                                    ]),
+                                Section::make('Serveur (réglages avancés)')
+                                    ->description('Déjà remplis pour Infomaniak : n\'y touche que si ta boîte est ailleurs.')
+                                    ->collapsible()
+                                    ->collapsed()
+                                    ->columns(['default' => 1, 'sm' => 3])
+                                    ->schema([
+                                        TextInput::make('mail_host')->label('Serveur SMTP')->required()->maxLength(255),
+                                        TextInput::make('mail_port')->label('Port')->integer()->minValue(1)->maxValue(65535)->required(),
+                                        Select::make('mail_scheme')->label('Sécurité')->options(['smtps' => 'SSL (port 465)', 'smtp' => 'STARTTLS (port 587)'])->required(),
+                                    ]),
+                                Section::make('État')
+                                    ->schema([Text::make(fn () => new HtmlString(self::mailStatusHtml()))]),
+                            ]),
                         Tab::make('Sécurité')
                             ->icon('heroicon-o-shield-check')
                             ->schema([
@@ -274,13 +335,25 @@ class Settings extends Page
                 ->action(function () {
                     $channels = NotificationCenter::test();
                     Notification::make()
-                        ->title($channels ? 'Test envoyé' : 'Aucun canal n\'a fonctionné')
-                        ->body($channels ? 'Envoyé : '.implode(' et ', $channels).'. Vérifie ta boîte mail et la cloche.' : 'Vérifie la configuration e-mail (MAIL_*) du serveur.')
-                        ->{$channels ? 'success' : 'danger'}()
+                        ->title(in_array('e-mail', $channels, true) ? 'Test envoyé' : 'E-mail non envoyé')
+                        ->body((in_array('e-mail', $channels, true) ? 'Envoyé : '.implode(' et ', $channels).'. Vérifie ta boîte mail (et le dossier Spam) et la cloche.' : 'L\'e-mail n\'est pas parti : '.(AutomationRun::query()->where('task', 'mail_erreur')->value('summary') ?? 'erreur inconnue').'. Vérifie l\'adresse et le mot de passe dans Réglages > E-mails.'))
+                        ->{in_array('e-mail', $channels, true) ? 'success' : 'danger'}()
+                        ->persistent()
                         ->send();
                 }),
             $this->guideAction()->name('guide_header'),
         ];
+    }
+
+    /**
+     * Dernier envoi réussi ou dernière erreur du serveur d'e-mail.
+     */
+    public static function mailStatusHtml(): string
+    {
+        $check = HealthCheck::checks()['mail'];
+        $color = $check['ok'] ? '#0d9488' : '#e11d48';
+
+        return '<span style="color:'.$color.'"><strong>'.($check['ok'] ? 'OK' : 'Problème').'</strong></span> – '.e($check['detail']);
     }
 
     /**
@@ -290,7 +363,7 @@ class Settings extends Page
     {
         $labels = [
             'scores' => 'Scores de pertinence', 'preparation' => 'Préparation d\'office', 'relances' => 'Relances',
-            'reponses' => 'Suivi des réponses', 'veille' => 'Veille', 'resume_matin' => 'Résumé du matin', 'bilan' => 'Bilan hebdomadaire',
+            'reponses' => 'Suivi des réponses', 'veille' => 'Veille', 'resume_matin' => 'Résumé du matin', 'bilan' => 'Bilan hebdomadaire', 'sante' => 'Contrôle de l\'état du système',
         ];
         $runs = AutomationRun::query()->get()->keyBy('task');
         $rows = '';
@@ -384,6 +457,10 @@ class Settings extends Page
 
         $previousScore = SettingsStore::get('auto_prepare_min_score');
 
+        if (blank($data['mail_password'] ?? null)) {
+            unset($data['mail_password']); // conserver le mot de passe déjà enregistré
+        }
+
         if (blank($data['google_client_secret'] ?? null)) {
             unset($data['google_client_secret']); // conserver le secret déjà enregistré
         }
@@ -399,6 +476,7 @@ class Settings extends Page
         $notification->send();
 
         $this->data['google_client_secret'] = null;
+        $this->data['mail_password'] = null;
 
         if ($previousScore !== SettingsStore::get('auto_prepare_min_score')) {
             app(AutoPreparer::class)->run(); // nouveau seuil : préparer tout de suite les offres concernées

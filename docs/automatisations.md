@@ -85,8 +85,9 @@ Compte 10 minutes. Chaque commande se copie entière, puis Entrée.
 
 ## Réglages à faire une fois dans le tableau de bord
 
-1. **Réglages > Notifications** : clique sur **Tester les notifications**. Tu dois recevoir un e-mail et voir
-   une notification sous la cloche. Si l'e-mail n'arrive pas, vérifie les lignes `MAIL_…` du fichier `.env`.
+1. **Réglages > E-mails** : renseigne la boîte d'envoi et le destinataire (voir « Les e-mails n'arrivent
+   pas » plus bas), **Enregistrer**, puis clique sur **Tester les notifications**. Tu dois recevoir un e-mail
+   et voir une notification sous la cloche.
 2. Toujours dans **Notifications**, choisis pour chaque type e-mail et/ou web app, l'heure et l'intervalle en
    jours, puis **Enregistrer**.
 3. **Réglages > Automatisations > Banque de preuves** : colle le tableau de ta banque de preuves
@@ -96,12 +97,51 @@ Compte 10 minutes. Chaque commande se copie entière, puis Entrée.
    auxquelles tu postules (ou les e-mails contenant « candidature »). Pour la veille, crée une alerte Google
    (google.com/alerts) par entreprise cible et range-les aussi dans « Jobs ».
 
+## État du système et alertes
+
+En haut du tableau de bord, l'encart **État du système** contrôle chaque maillon : tâche planifiée (cron),
+envoi des e-mails, compte Google, synchronisation du registre, alertes d'emploi dans le libellé Gmail
+« Jobs » et nouvelles offres ajoutées par la recherche quotidienne. Une ligne verte : tout va bien.
+Sinon, chaque point en panne est affiché avec la marche à suivre, et une alerte « Problème technique »
+part (web app et e-mail, une fois par jour au plus). Si ce sont les e-mails qui ne partent pas,
+l'alerte arrive sous la cloche.
+
+## Les e-mails n'arrivent pas
+
+Tout se règle dans le tableau de bord, sans SSH : **Réglages > E-mails**.
+
+1. **Boîte d'envoi** : l'adresse d'une boîte e-mail Infomaniak existante (par exemple une adresse de ton
+   domaine) et son mot de passe. Le mot de passe est chiffré et n'est jamais réaffiché.
+2. **Destinataire** : l'adresse où tu veux recevoir les résumés et alertes (par exemple ton Gmail).
+3. Le serveur (mail.infomaniak.com, port 465, SSL) est déjà rempli dans « Réglages avancés ».
+4. **Enregistrer**, puis **Tester les notifications** en haut de la page. En cas d'échec, le message
+   affiche l'erreur exacte du serveur d'e-mail. Pense aussi au dossier **Spam**.
+
+Ces réglages remplacent les lignes `MAIL_…` du fichier `.env`.
+
+## Les alertes d'emploi n'arrivent pas dans « Jobs »
+
+La recherche quotidienne et le tableau de bord ne lisent que ce libellé. Il faut donc que chaque
+plateforme t'envoie ses alertes et qu'un filtre Gmail les y range :
+
+1. Vérifie que les alertes existent : LinkedIn (Emplois > Alertes), jobup, jobs.ch, Indeed,
+   et l'alerte Google Jobs.
+2. Dans Gmail, ouvre une alerte de chaque plateforme et note l'adresse de l'expéditeur.
+3. Gmail > Paramètres > Filtres et adresses bloquées > Créer un filtre. Dans « De », colle par exemple :
+
+   ```
+   jobmail@jobs.ch OR candidat@jobup.ch OR match.indeed.com OR jobalerts-noreply@linkedin.com
+   ```
+
+   en ajoutant les adresses relevées à l'étape 2. Puis « Créer un filtre » > cocher « Appliquer le
+   libellé : Jobs » et « Appliquer également le filtre aux conversations correspondantes ».
+
 ## Commandes utiles (SSH)
 
 | Besoin | Commande |
 | --- | --- |
 | Tout lancer maintenant | `php artisan automatisations:executer --force` |
-| Une seule tâche | `php artisan automatisations:executer relances --force` (ou `scores`, `preparation`, `reponses`, `veille`, `resume_matin`, `bilan`) |
+| Une seule tâche | `php artisan automatisations:executer relances --force` (ou `scores`, `preparation`, `reponses`, `veille`, `resume_matin`, `bilan`, `sante`) |
 | Voir ce qui est planifié | `php artisan schedule:list` |
 
 ## Limites connues

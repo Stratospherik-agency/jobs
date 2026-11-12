@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\AutomationRun;
 use App\Services\Automation\AutoPreparer;
 use App\Services\Automation\FollowUps;
+use App\Services\Automation\HealthCheck;
 use App\Services\Automation\MorningDigest;
 use App\Services\Automation\NotificationCenter;
 use App\Services\Automation\RelevanceScorer;
@@ -22,12 +23,12 @@ use Throwable;
 class RunAutomations extends Command
 {
     protected $signature = 'automatisations:executer
-        {tache? : scores, preparation, relances, reponses, veille, resume_matin ou bilan (toutes par défaut)}
+        {tache? : scores, preparation, relances, reponses, veille, resume_matin, bilan ou sante (toutes par défaut)}
         {--force : lancer maintenant, sans attendre l\'heure prévue}';
 
     protected $description = 'Lance les automatisations du tableau de bord (préparation, relances, résumés, veille…)';
 
-    public const TASKS = ['scores', 'preparation', 'relances', 'reponses', 'veille', 'resume_matin', 'bilan'];
+    public const TASKS = ['scores', 'preparation', 'relances', 'reponses', 'veille', 'resume_matin', 'bilan', 'sante'];
 
     public function handle(): int
     {
@@ -61,6 +62,14 @@ class RunAutomations extends Command
             }
         }
 
+        $mailError = AutomationRun::query()->where('task', 'mail_erreur')->first();
+        $mailOk = AutomationRun::lastRun('mail_ok');
+        if ($mailError && (! $mailOk || $mailError->ran_at->gt($mailOk)) && $mailError->ran_at->gt(now()->subMinutes(5))) {
+            $this->error('E-mails : envoi impossible. '.$mailError->summary);
+            $this->line('Vérifie l\'adresse et le mot de passe de la boîte d\'envoi dans Réglages > E-mails du tableau de bord.');
+            $failed = true;
+        }
+
         return $failed ? self::FAILURE : self::SUCCESS;
     }
 
@@ -78,6 +87,7 @@ class RunAutomations extends Command
             'bilan' => NotificationCenter::enabled('bilan')
                 && ($p = NotificationCenter::preferences('bilan'))
                 && AutomationRun::dueAt('bilan', $p['time'], $p['every_days'], $p['every_days'] % 7 === 0 ? $p['weekday'] : null),
+            'sante' => AutomationRun::dueEvery('sante', 60),
         };
     }
 
@@ -92,6 +102,7 @@ class RunAutomations extends Command
             'veille' => (fn ($r) => "{$r['signals']} signal(aux)")(app(TargetWatch::class)->run(NotificationCenter::preferences('veille')['every_days'])),
             'resume_matin' => (fn ($r) => $r['sent'] ? 'envoyé ('.http_build_query($r['counts'], '', ', ').')' : 'rien à signaler')(app(MorningDigest::class)->send()),
             'bilan' => (fn ($r) => "envoyé ({$r['week']['sent']} envoi(s) cette semaine)")(app(WeeklyReport::class)->send()),
+            'sante' => (fn ($r) => $r['failing'] ? 'à vérifier : '.implode(', ', $r['failing']) : 'tout fonctionne')(app(HealthCheck::class)->run()),
         };
     }
 }
