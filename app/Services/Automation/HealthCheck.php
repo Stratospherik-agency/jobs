@@ -54,8 +54,8 @@ class HealthCheck
             'ok' => ! $failing,
             'detail' => $failing
                 ? 'Échec le '.$ko->ran_at->format('d.m.Y à H:i').' : '.$ko->summary
-                : ($ok ? 'Dernier e-mail parti le '.$ok->format('d.m.Y à H:i').' vers '.config('dashboard.owner_email').' (penser au dossier Spam)' : 'Aucun e-mail envoyé pour l\'instant'),
-            'fix' => 'Vérifier les lignes MAIL_… du fichier .env du serveur (adresse et mot de passe de la boîte Infomaniak).',
+                : ($ok ? 'Dernier e-mail parti le '.$ok->format('d.m.Y à H:i').' vers '.(config('dashboard.notification_email') ?: config('dashboard.owner_email')).' (penser au dossier Spam)' : 'Aucun e-mail envoyé pour l\'instant'),
+            'fix' => 'Vérifier l\'adresse et le mot de passe de la boîte d\'envoi dans Réglages > E-mails, puis cliquer sur « Tester les notifications ».',
         ];
 
         // 3. Compte Google et synchronisation du registre.

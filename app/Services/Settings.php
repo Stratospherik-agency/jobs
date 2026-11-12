@@ -33,10 +33,19 @@ class Settings
         'gmail_label' => 'dashboard.gmail_label',
         'proof_bank' => 'dashboard.proof_bank',
         'notifications' => 'dashboard.notifications',
+        // Envoi des e-mails du tableau de bord (serveur SMTP, par exemple la boîte Infomaniak).
+        'mail_host' => 'mail.mailers.smtp.host',
+        'mail_port' => 'mail.mailers.smtp.port',
+        'mail_scheme' => 'mail.mailers.smtp.scheme',
+        'mail_username' => 'mail.mailers.smtp.username',
+        'mail_password' => 'mail.mailers.smtp.password',
+        'mail_from_address' => 'mail.from.address',
+        'mail_from_name' => 'mail.from.name',
+        'notification_email' => 'dashboard.notification_email',
     ];
 
     /** Réglages jamais renvoyés vers le navigateur. */
-    public const SECRETS = ['google_client_secret'];
+    public const SECRETS = ['google_client_secret', 'mail_password'];
 
     private const CASTS = [
         'follow_up_days' => 'int',
@@ -48,6 +57,7 @@ class Settings
         'follow_up_drafts' => 'bool',
         'response_auto_status' => 'bool',
         'notifications' => 'json',
+        'mail_port' => 'int',
     ];
 
     /**
@@ -79,6 +89,16 @@ class Settings
             }
 
             config([self::KEYS[$setting->key] => self::cast($setting->key, $value)]);
+
+            // Un serveur d'e-mail réglé dans l'interface remplace celui du .env.
+            if ($setting->key === 'mail_host') {
+                config(['mail.default' => 'smtp']);
+            }
+        }
+
+        // Le serveur d'e-mail a peut-être changé : le prochain envoi reprend les réglages.
+        if (app()->resolved('mail.manager')) {
+            app('mail.manager')->purge('smtp');
         }
     }
 

@@ -11,6 +11,7 @@ use App\Services\Google\GoogleClient;
 use App\Services\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -26,7 +27,7 @@ class SettingsTest extends TestCase
         return $owner;
     }
 
-    private function saveForm(array $data): \Livewire\Features\SupportTesting\Testable
+    private function saveForm(array $data): Testable
     {
         $this->actingAs($this->owner());
 
@@ -123,5 +124,32 @@ class SettingsTest extends TestCase
         $this->assertStringContainsString(config('services.google.redirect'), $html);
         $this->assertStringContainsString('target="_blank" rel="noopener noreferrer"', $html);
         $this->assertStringNotContainsString('jobs.pierreolliviertissier.ch/google/callback', $html);
+    }
+
+    public function test_mail_server_is_configured_from_the_settings_page(): void
+    {
+        $this->saveForm([
+            'mail_username' => 'jobs@pierreolliviertissier.ch',
+            'mail_password' => 'mot-de-passe-boite',
+            'mail_from_address' => 'jobs@pierreolliviertissier.ch',
+            'notification_email' => 'pierre@example.test',
+        ])->assertHasNoFormErrors();
+
+        $this->assertSame('smtp', config('mail.default'));
+        $this->assertSame('mail.infomaniak.com', config('mail.mailers.smtp.host'));
+        $this->assertSame(465, config('mail.mailers.smtp.port'));
+        $this->assertSame('jobs@pierreolliviertissier.ch', config('mail.mailers.smtp.username'));
+        $this->assertSame('mot-de-passe-boite', config('mail.mailers.smtp.password'));
+        $this->assertSame('jobs@pierreolliviertissier.ch', config('mail.from.address'));
+        $this->assertSame('pierre@example.test', User::query()->first()->routeNotificationForMail());
+
+        $raw = DB::table('settings')->where('key', 'mail_password')->value('value');
+        $this->assertStringNotContainsString('mot-de-passe-boite', $raw);
+
+        $this->get('/reglages')->assertOk()->assertDontSee('mot-de-passe-boite');
+
+        // Mot de passe laissé vide : l'ancien est conservé.
+        Livewire::test(SettingsPage::class)->fillForm(['mail_password' => ''])->call('save')->assertHasNoFormErrors();
+        $this->assertSame('mot-de-passe-boite', config('mail.mailers.smtp.password'));
     }
 }

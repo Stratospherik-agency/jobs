@@ -107,25 +107,16 @@ l'alerte arrive sous la cloche.
 
 ## Les e-mails n'arrivent pas
 
-1. Regarde d'abord dans le dossier **Spam** de la boîte indiquée dans l'encart « État du système ».
-2. Connecte-toi en SSH et va dans le dossier du site (étapes 2 et 3 de la mise en ligne), puis :
+Tout se règle dans le tableau de bord, sans SSH : **Réglages > E-mails**.
 
-   ```bash
-   grep -E '^(MAIL_|DASHBOARD_OWNER_EMAIL)' .env | sed -E 's/^(MAIL_PASSWORD=).+/\1(rempli)/'
-   ```
+1. **Boîte d'envoi** : l'adresse d'une boîte e-mail Infomaniak existante (par exemple une adresse de ton
+   domaine) et son mot de passe. Le mot de passe est chiffré et n'est jamais réaffiché.
+2. **Destinataire** : l'adresse où tu veux recevoir les résumés et alertes (par exemple ton Gmail).
+3. Le serveur (mail.infomaniak.com, port 465, SSL) est déjà rempli dans « Réglages avancés ».
+4. **Enregistrer**, puis **Tester les notifications** en haut de la page. En cas d'échec, le message
+   affiche l'erreur exacte du serveur d'e-mail. Pense aussi au dossier **Spam**.
 
-   Il faut : `MAIL_HOST=mail.infomaniak.com`, `MAIL_PORT=465`, `MAIL_SCHEME=smtps`, `MAIL_USERNAME` et
-   `MAIL_FROM_ADDRESS` égaux à une **adresse e-mail Infomaniak existante** (par exemple une adresse de ton
-   domaine), `MAIL_PASSWORD` = « (rempli) », et `DASHBOARD_OWNER_EMAIL` = l'adresse où tu veux recevoir.
-3. Pour corriger : `nano .env`, modifie les lignes, puis Ctrl+O, Entrée, Ctrl+X. Ensuite :
-
-   ```bash
-   php artisan optimize
-   php artisan automatisations:executer sante --force
-   ```
-
-4. Dans le tableau de bord : Réglages > **Tester les notifications**. En cas d'échec, le message affiche
-   l'erreur exacte du serveur d'e-mail.
+Ces réglages remplacent les lignes `MAIL_…` du fichier `.env`.
 
 ## Les alertes d'emploi n'arrivent pas dans « Jobs »
 

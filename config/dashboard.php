@@ -46,6 +46,11 @@ return [
     'notifications' => [],
 
     /*
+     * Adresse qui reçoit les notifications (sinon celle du compte, DASHBOARD_OWNER_EMAIL).
+     */
+    'notification_email' => env('DASHBOARD_NOTIFICATION_EMAIL'),
+
+    /*
      * Proxys de confiance (adresses IP séparées par des virgules, ou *).
      * Laisser vide si le site n'est pas derrière un proxy.
      */

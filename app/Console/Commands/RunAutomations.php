@@ -66,7 +66,7 @@ class RunAutomations extends Command
         $mailOk = AutomationRun::lastRun('mail_ok');
         if ($mailError && (! $mailOk || $mailError->ran_at->gt($mailOk)) && $mailError->ran_at->gt(now()->subMinutes(5))) {
             $this->error('E-mails : envoi impossible. '.$mailError->summary);
-            $this->line('Vérifie les lignes MAIL_… du fichier .env (voir docs/automatisations.md, « Les e-mails n\'arrivent pas »).');
+            $this->line('Vérifie l\'adresse et le mot de passe de la boîte d\'envoi dans Réglages > E-mails du tableau de bord.');
             $failed = true;
         }
 

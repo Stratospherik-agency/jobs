@@ -32,6 +32,14 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         return filled($owner) && hash_equals(mb_strtolower($owner), mb_strtolower($this->email));
     }
 
+    /**
+     * Les e-mails du tableau de bord partent vers l'adresse choisie dans Réglages > E-mails.
+     */
+    public function routeNotificationForMail(): string
+    {
+        return config('dashboard.notification_email') ?: $this->email;
+    }
+
     public function getAppAuthenticationHolderName(): string
     {
         return $this->email;
