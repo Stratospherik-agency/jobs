@@ -86,8 +86,8 @@ Compte 10 minutes. Chaque commande se copie entière, puis Entrée.
 ## Réglages à faire une fois dans le tableau de bord
 
 1. **Réglages > E-mails** : renseigne la boîte d'envoi et le destinataire (voir « Les e-mails n'arrivent
-   pas » plus bas), **Enregistrer**, puis clique sur **Tester les notifications**. Tu dois recevoir un e-mail
-   et voir une notification sous la cloche.
+   pas » plus bas), clique sur **Tester la configuration e-mail**, puis **Enregistrer**. Le bouton
+   **Tester les notifications** (en haut de la page) vérifie ensuite l'e-mail et la cloche ensemble.
 2. Toujours dans **Notifications**, choisis pour chaque type e-mail et/ou web app, l'heure et l'intervalle en
    jours, puis **Enregistrer**.
 3. **Réglages > Automatisations > Banque de preuves** : colle le tableau de ta banque de preuves
@@ -114,8 +114,10 @@ Tout se règle dans le tableau de bord, sans SSH : **Réglages > E-mails**.
    domaine) et son mot de passe. Le mot de passe est chiffré et n'est jamais réaffiché.
 2. **Destinataire** : l'adresse où tu veux recevoir les résumés et alertes (par exemple ton Gmail).
 3. Le serveur (mail.infomaniak.com, port 465, SSL) est déjà rempli dans « Réglages avancés ».
-4. **Enregistrer**, puis **Tester les notifications** en haut de la page. En cas d'échec, le message
-   affiche l'erreur exacte du serveur d'e-mail. Pense aussi au dossier **Spam**.
+4. **Tester la configuration e-mail** (bouton de l'onglet) : un e-mail de test part avec les réglages
+   saisis, même avant de les enregistrer. En cas d'échec, le message affiche l'erreur exacte du serveur
+   d'e-mail et la piste à suivre. Pense aussi au dossier **Spam**.
+5. **Enregistrer**.
 
 Ces réglages remplacent les lignes `MAIL_…` du fichier `.env`.
 
