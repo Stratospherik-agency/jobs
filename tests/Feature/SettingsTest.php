@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Google\GoogleClient;
 use App\Services\Settings;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Features\SupportTesting\Testable;
@@ -151,5 +152,37 @@ class SettingsTest extends TestCase
         // Mot de passe laissé vide : l'ancien est conservé.
         Livewire::test(SettingsPage::class)->fillForm(['mail_password' => ''])->call('save')->assertHasNoFormErrors();
         $this->assertSame('mot-de-passe-boite', config('mail.mailers.smtp.password'));
+    }
+
+    public function test_mail_settings_can_be_tested_before_saving(): void
+    {
+        $state = [
+            'mail_username' => 'jobs@pierreolliviertissier.ch',
+            'mail_password' => 'mot-de-passe-boite',
+            'mail_from_address' => '',
+            'notification_email' => 'pierre@example.test',
+            'mail_host' => 'mail.infomaniak.com',
+            'mail_port' => 465,
+            'mail_scheme' => 'smtps',
+        ];
+
+        $result = SettingsPage::testMailSettings($state, 'array');
+        $this->assertTrue($result['ok']);
+        $this->assertStringContainsString('pierre@example.test', $result['message']);
+        $this->assertStringContainsString('Enregistrer', $result['message']);
+
+        $missing = SettingsPage::testMailSettings(['notification_email' => 'pierre@example.test', 'mail_username' => '']);
+        $this->assertFalse($missing['ok']);
+        $this->assertStringContainsString('Il manque', $missing['message']);
+
+        // Serveur injoignable : l'erreur exacte et une piste sont affichées.
+        $down = SettingsPage::testMailSettings(['mail_host' => '127.0.0.1', 'mail_port' => 1, 'mail_scheme' => 'smtp'] + $state);
+        $this->assertFalse($down['ok']);
+        $this->assertStringContainsString('Erreur du serveur', $down['message']);
+
+        Livewire::test(SettingsPage::class)
+            ->fillForm(['mail_username' => '', 'notification_email' => 'pierre@example.test'])
+            ->callAction(TestAction::make('test_mail_settings')->schemaComponent('mail_test_actions'))
+            ->assertNotified('Échec de l\'envoi');
     }
 }

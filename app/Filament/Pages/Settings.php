@@ -29,8 +29,10 @@ use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Throwable;
 use UnitEnum;
 
 /**
@@ -263,7 +265,7 @@ class Settings extends Page
                         Tab::make('E-mails')
                             ->icon('heroicon-o-at-symbol')
                             ->schema([
-                                Text::make('Les résumés, alertes et relances te sont envoyés depuis une boîte e-mail Infomaniak. Indique ici son adresse et son mot de passe, puis clique sur « Enregistrer » et « Tester les notifications » en haut de la page.'),
+                                Text::make('Les résumés, alertes et relances te sont envoyés depuis une boîte e-mail Infomaniak. Indique ici son adresse et son mot de passe, clique sur « Tester la configuration e-mail » (plus bas), puis sur « Enregistrer ».'),
                                 Section::make('Boîte d\'envoi')
                                     ->description('Une adresse existante chez Infomaniak, par exemple une adresse de ton domaine. Le mot de passe est celui de cette boîte e-mail.')
                                     ->columns(['default' => 1, 'sm' => 2])
@@ -308,8 +310,25 @@ class Settings extends Page
                                         TextInput::make('mail_port')->label('Port')->integer()->minValue(1)->maxValue(65535)->required(),
                                         Select::make('mail_scheme')->label('Sécurité')->options(['smtps' => 'SSL (port 465)', 'smtp' => 'STARTTLS (port 587)'])->required(),
                                     ]),
-                                Section::make('État')
-                                    ->schema([Text::make(fn () => new HtmlString(self::mailStatusHtml()))]),
+                                Section::make('Tester')
+                                    ->description('Envoie un e-mail de test avec les réglages ci-dessus, même avant de les enregistrer. En cas d\'échec, l\'erreur exacte du serveur s\'affiche.')
+                                    ->schema([
+                                        Actions::make([
+                                            Action::make('test_mail_settings')
+                                                ->label('Tester la configuration e-mail')
+                                                ->icon('heroicon-o-paper-airplane')
+                                                ->action(function () {
+                                                    $result = self::testMailSettings($this->data ?? []);
+                                                    Notification::make()
+                                                        ->title($result['ok'] ? 'E-mail de test envoyé' : 'Échec de l\'envoi')
+                                                        ->body($result['message'])
+                                                        ->{$result['ok'] ? 'success' : 'danger'}()
+                                                        ->persistent()
+                                                        ->send();
+                                                }),
+                                        ])->key('mail_test_actions'),
+                                        Text::make(fn () => new HtmlString(self::mailStatusHtml())),
+                                    ]),
                             ]),
                         Tab::make('Sécurité')
                             ->icon('heroicon-o-shield-check')
@@ -343,6 +362,69 @@ class Settings extends Page
                 }),
             $this->guideAction()->name('guide_header'),
         ];
+    }
+
+    /**
+     * Envoie un e-mail de test avec les réglages du formulaire (enregistrés ou non).
+     * Mot de passe laissé vide : celui déjà enregistré est utilisé.
+     *
+     * @param  array<string, mixed>  $state
+     * @return array{ok: bool, message: string}
+     */
+    public static function testMailSettings(array $state, ?string $transport = null): array
+    {
+        $username = trim((string) ($state['mail_username'] ?? ''));
+        $password = filled($state['mail_password'] ?? null) ? (string) $state['mail_password'] : (string) SettingsStore::get('mail_password');
+        $from = trim((string) ($state['mail_from_address'] ?? '')) ?: $username;
+        $to = trim((string) ($state['notification_email'] ?? ''));
+        $host = trim((string) ($state['mail_host'] ?? '')) ?: 'mail.infomaniak.com';
+
+        $missing = array_keys(array_filter([
+            'l\'adresse de la boîte d\'envoi' => $username === '',
+            'son mot de passe' => $password === '',
+            'l\'adresse du destinataire' => $to === '',
+        ]));
+        if ($missing) {
+            return ['ok' => false, 'message' => 'Il manque '.implode(', ', $missing).'.'];
+        }
+        if (! filter_var($to, FILTER_VALIDATE_EMAIL) || ! filter_var($from, FILTER_VALIDATE_EMAIL)) {
+            return ['ok' => false, 'message' => 'Une des adresses e-mail n\'est pas valide.'];
+        }
+
+        try {
+            Mail::build([
+                'transport' => $transport ?? 'smtp',
+                'scheme' => ($state['mail_scheme'] ?? 'smtps') === 'smtp' ? 'smtp' : 'smtps',
+                'host' => $host,
+                'port' => (int) ($state['mail_port'] ?? 465) ?: 465,
+                'username' => $username,
+                'password' => $password,
+                'timeout' => 20,
+            ])->raw(
+                "Bonjour,\n\nCet e-mail confirme que la configuration e-mail du tableau de bord fonctionne.\n\nServeur : {$host}\nBoîte d'envoi : {$username}\n\nTon tableau de bord jobs",
+                fn ($message) => $message->from($from, trim((string) ($state['mail_from_name'] ?? '')) ?: null)->to($to)->subject('Test de la configuration e-mail'),
+            );
+        } catch (Throwable $e) {
+            $error = mb_substr($e->getMessage(), 0, 400);
+            $hint = match (true) {
+                (bool) preg_match('/\b535\b|authenticat|credentials/i', $error) => 'L\'adresse ou le mot de passe de la boîte d\'envoi est refusé par le serveur : vérifie-les (le mot de passe est celui de la boîte e-mail, pas celui du Manager Infomaniak).',
+                (bool) preg_match('/timed out|refused|resolve|getaddrinfo|unreachable/i', $error) => 'Le serveur d\'e-mail ne répond pas : vérifie le serveur, le port et la sécurité dans « Serveur (réglages avancés) ».',
+                (bool) preg_match('/sender|from address|\b553\b|\b550\b/i', $error) => 'L\'adresse d\'expédition est refusée : utilise la même que la boîte d\'envoi.',
+                default => 'Vérifie les réglages ci-dessus.',
+            };
+
+            return ['ok' => false, 'message' => $hint.' Erreur du serveur : '.$error];
+        }
+
+        $saved = SettingsStore::get('mail_username') === $username
+            && SettingsStore::get('mail_password') === $password
+            && SettingsStore::get('mail_host') === $host;
+        if ($saved) {
+            AutomationRun::mark('mail_ok', 'Test de la configuration e-mail');
+        }
+
+        return ['ok' => true, 'message' => "Un e-mail de test est parti vers {$to}. Vérifie ta boîte (et le dossier Spam)."
+            .($saved ? '' : ' Clique maintenant sur « Enregistrer » pour garder ces réglages.')];
     }
 
     /**
