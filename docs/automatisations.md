@@ -85,8 +85,9 @@ Compte 10 minutes. Chaque commande se copie entière, puis Entrée.
 
 ## Réglages à faire une fois dans le tableau de bord
 
-1. **Réglages > Notifications** : clique sur **Tester les notifications**. Tu dois recevoir un e-mail et voir
-   une notification sous la cloche. Si l'e-mail n'arrive pas, vérifie les lignes `MAIL_…` du fichier `.env`.
+1. **Réglages > E-mails** : renseigne la boîte d'envoi et le destinataire (voir « Les e-mails n'arrivent
+   pas » plus bas), **Enregistrer**, puis clique sur **Tester les notifications**. Tu dois recevoir un e-mail
+   et voir une notification sous la cloche.
 2. Toujours dans **Notifications**, choisis pour chaque type e-mail et/ou web app, l'heure et l'intervalle en
    jours, puis **Enregistrer**.
 3. **Réglages > Automatisations > Banque de preuves** : colle le tableau de ta banque de preuves
