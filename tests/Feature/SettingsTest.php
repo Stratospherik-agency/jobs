@@ -185,4 +185,22 @@ class SettingsTest extends TestCase
             ->callAction(TestAction::make('test_mail_settings')->schemaComponent('mail_test_actions'))
             ->assertNotified('Échec de l\'envoi');
     }
+
+    public function test_mail_sender_defaults_to_the_sending_mailbox(): void
+    {
+        $this->saveForm([
+            'mail_username' => 'jobs@pierreolliviertissier.ch',
+            'mail_password' => 'mot-de-passe-boite',
+            'mail_from_address' => '',
+            'notification_email' => 'pierre@example.test',
+        ])->assertHasNoFormErrors();
+
+        $this->assertSame('jobs@pierreolliviertissier.ch', config('mail.from.address'));
+
+        // Réglage absent en base (enregistré avant ce correctif) : la boîte d'envoi sert d'expéditeur.
+        Setting::query()->where('key', 'mail_from_address')->delete();
+        config(['mail.from.address' => null]);
+        Settings::apply();
+        $this->assertSame('jobs@pierreolliviertissier.ch', config('mail.from.address'));
+    }
 }

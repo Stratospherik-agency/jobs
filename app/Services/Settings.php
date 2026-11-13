@@ -96,6 +96,12 @@ class Settings
             }
         }
 
+        // Sans adresse d'expédition, les e-mails partent de la boîte d'envoi (sinon le serveur les refuse).
+        if (blank(config('mail.from.address')) && filled(config('mail.mailers.smtp.username'))
+            && filter_var(config('mail.mailers.smtp.username'), FILTER_VALIDATE_EMAIL)) {
+            config(['mail.from.address' => config('mail.mailers.smtp.username')]);
+        }
+
         // Le serveur d'e-mail a peut-être changé : le prochain envoi reprend les réglages.
         if (app()->resolved('mail.manager')) {
             app('mail.manager')->purge('smtp');

@@ -539,6 +539,11 @@ class Settings extends Page
 
         $previousScore = SettingsStore::get('auto_prepare_min_score');
 
+        // Adresse d'expédition laissée vide : celle de la boîte d'envoi, comme pour le test.
+        if (blank($data['mail_from_address'] ?? null) && filled($data['mail_username'] ?? null)) {
+            $data['mail_from_address'] = $data['mail_username'];
+        }
+
         if (blank($data['mail_password'] ?? null)) {
             unset($data['mail_password']); // conserver le mot de passe déjà enregistré
         }

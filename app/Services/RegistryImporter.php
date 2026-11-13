@@ -8,6 +8,7 @@ use App\Support\Catalog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 /**
  * Importe le registre des candidatures exporté de Google Sheets en CSV
@@ -155,55 +156,62 @@ class RegistryImporter
     {
         $result = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => []];
 
-        DB::transaction(function () use ($map, $rows, $sync, &$result) {
-            foreach ($rows as $number => $row) {
-                $line = $number + 2; // ligne 1 = en-têtes
-                $data = [];
+        foreach ($rows as $number => $row) {
+            $line = $number + 2; // ligne 1 = en-têtes
 
-                foreach ($map as $index => $attribute) {
-                    $value = trim((string) ($row[$index] ?? ''));
-                    $data[$attribute] = $value === '' ? null : $value;
-                }
+            // Chaque ligne est enregistrée à part : une ligne en erreur n'empêche pas d'importer les autres.
+            try {
+                DB::transaction(function () use ($map, $row, $line, $sync, &$result) {
+                    $data = [];
 
-                if (blank($data['company'] ?? null) && blank($data['title'] ?? null)) {
-                    continue; // ligne vide
-                }
-
-                if (blank($data['company'] ?? null) || blank($data['title'] ?? null)) {
-                    $result['errors'][] = "Ligne {$line} : entreprise ou poste manquant.";
-
-                    continue;
-                }
-
-                try {
-                    $data = $this->normalize($data);
-                } catch (RuntimeException $e) {
-                    $result['errors'][] = "Ligne {$line} : ".$e->getMessage();
-
-                    continue;
-                }
-
-                if ($existing = $this->find($data)) {
-                    if ($sync && $this->applyChanges($existing, $data)) {
-                        $result['updated']++;
-                    } else {
-                        $result['skipped']++;
+                    foreach ($map as $index => $attribute) {
+                        $value = trim((string) ($row[$index] ?? ''));
+                        $data[$attribute] = $value === '' ? null : $value;
                     }
 
-                    continue;
-                }
+                    if (blank($data['company'] ?? null) && blank($data['title'] ?? null)) {
+                        return; // ligne vide
+                    }
 
-                $opportunity = new Opportunity($data);
-                $opportunity->registry_snapshot = $this->snapshot($data);
-                $opportunity->save();
-                $opportunity->events()->create([
-                    'type' => 'import',
-                    'body' => $sync ? 'Ajoutée par synchronisation du registre Google Sheets' : 'Importée depuis le registre Google Sheets',
-                    'happened_at' => now(),
-                ]);
-                $result['created']++;
+                    if (blank($data['company'] ?? null) || blank($data['title'] ?? null)) {
+                        $result['errors'][] = "Ligne {$line} : entreprise ou poste manquant.";
+
+                        return;
+                    }
+
+                    try {
+                        $data = $this->normalize($data);
+                    } catch (RuntimeException $e) {
+                        $result['errors'][] = "Ligne {$line} : ".$e->getMessage();
+
+                        return;
+                    }
+
+                    if ($existing = $this->find($data)) {
+                        if ($sync && $this->applyChanges($existing, $data)) {
+                            $result['updated']++;
+                        } else {
+                            $result['skipped']++;
+                        }
+
+                        return;
+                    }
+
+                    $opportunity = new Opportunity($data);
+                    $opportunity->registry_snapshot = $this->snapshot($data);
+                    $opportunity->save();
+                    $opportunity->events()->create([
+                        'type' => 'import',
+                        'body' => $sync ? 'Ajoutée par synchronisation du registre Google Sheets' : 'Importée depuis le registre Google Sheets',
+                        'happened_at' => now(),
+                    ]);
+                    $result['created']++;
+                });
+            } catch (Throwable $e) {
+                report($e);
+                $result['errors'][] = "Ligne {$line} : ".mb_substr($e->getMessage(), 0, 200);
             }
-        });
+        }
 
         return $result;
     }

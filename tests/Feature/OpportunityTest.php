@@ -99,4 +99,24 @@ class OpportunityTest extends TestCase
             ->expectsOutputToContain('3 offre(s) importée(s)')
             ->assertSuccessful();
     }
+
+    public function test_a_failing_registry_row_does_not_block_the_others(): void
+    {
+        Opportunity::creating(function (Opportunity $opportunity) {
+            if ($opportunity->company === 'Ligne en panne') {
+                throw new \RuntimeException('colonne trop longue');
+            }
+        });
+
+        $result = app(RegistryImporter::class)->sync([
+            ['Entreprise', 'Poste', 'Lien'],
+            ['Ligne en panne', 'Poste A', 'https://example.test/a'],
+            ['Farner Consulting AG', 'Consultant·e en communication 100%', 'https://ch.indeed.com/viewjob?jk=19f817366b57ef5d'],
+        ]);
+
+        $this->assertSame(1, $result['created']);
+        $this->assertSame(['Ligne 2 : colonne trop longue'], $result['errors']);
+        $this->assertDatabaseHas('opportunities', ['company' => 'Farner Consulting AG']);
+        $this->assertDatabaseMissing('opportunities', ['company' => 'Ligne en panne']);
+    }
 }
