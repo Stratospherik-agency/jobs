@@ -30,7 +30,9 @@ class OpportunitiesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort(fn (Builder $query) => $query->orderByDesc('relevance_score')->orderByDesc('relevance')->orderByDesc('added_at'))
+            // Les offres les plus récentes d'abord (puis les plus pertinentes) : une nouvelle offre peu notée
+            // reste visible en haut de la liste le jour de son arrivée.
+            ->defaultSort(fn (Builder $query) => $query->orderByDesc('added_at')->orderByDesc('relevance_score')->orderByDesc('relevance'))
             ->columns([
                 TextColumn::make('company')
                     ->label('Entreprise')
@@ -68,7 +70,14 @@ class OpportunitiesTable
                     ->sortable()
                     ->placeholder('—')
                     ->color(fn (Opportunity $record) => $record->follow_up_at && ! $record->follow_up_at->isFuture() ? 'danger' : null),
-                TextColumn::make('added_at')->label('Ajoutée le')->date('d.m.Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('added_at')
+                    ->label('Ajoutée le')
+                    ->date('d.m.Y')
+                    ->badge()
+                    ->color(fn (Opportunity $record) => $record->added_at?->gte(today()->subDay()) ? 'success' : 'gray')
+                    ->tooltip(fn (Opportunity $record) => $record->added_at?->gte(today()->subDay()) ? 'Nouvelle offre (moins de 48 h)' : null)
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters(self::filters())
             ->filtersLayout(FiltersLayout::AboveContentCollapsible)
